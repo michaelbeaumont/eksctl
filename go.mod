@@ -6,6 +6,7 @@ go 1.14
 
 require (
 	github.com/Azure/go-autorest/autorest v0.10.0 // indirect
+	github.com/Azure/go-autorest/autorest/azure/auth v0.4.2 // indirect
 	github.com/alecthomas/jsonschema v0.0.0-20200514014646-0366d1034a17
 	github.com/aws/aws-sdk-go v1.30.11
 	github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1
@@ -21,7 +22,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/gofrs/flock v0.7.1
 	github.com/golangci/golangci-lint v1.27.0
-	github.com/goreleaser/goreleaser v0.110.0
+	github.com/goreleaser/goreleaser v0.136.0
 	github.com/instrumenta/kubeval v0.0.0-20190918223246-8d013ec9fc56
 	github.com/justinbarrick/go-k8s-portforward v1.0.3
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
@@ -53,13 +54,13 @@ require (
 	k8s.io/apiextensions-apiserver v0.16.8
 	k8s.io/apimachinery v0.16.8
 	k8s.io/cli-runtime v0.16.8
-	k8s.io/client-go v11.0.0+incompatible
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/cloud-provider v0.16.8
 	k8s.io/code-generator v0.16.8
 	k8s.io/kops v1.15.2
-	k8s.io/kubelet v0.0.0
+	k8s.io/kubelet v0.16.8
 	k8s.io/kubernetes v1.15.3
-	k8s.io/legacy-cloud-providers v0.0.0
+	k8s.io/legacy-cloud-providers v0.16.8
 	sigs.k8s.io/aws-iam-authenticator v0.5.0
 	sigs.k8s.io/yaml v1.2.0
 )
