@@ -3,10 +3,9 @@ table#config {
 }
 table#config span.example,
 table#config span.value {
-    filter: opacity(70%);
+    filter: opacity(50%);
 }
 table#config td.comment:nth-child(3) {
-    display: none;
     border-left: 2px solid whiteSmoke;
 }
 table#config td:first-child{

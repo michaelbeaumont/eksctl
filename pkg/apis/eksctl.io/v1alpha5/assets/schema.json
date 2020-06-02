@@ -1,16 +1,18 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
   "$ref": "#/definitions/ClusterConfig",
+  "type": "object",
+  "$schema": "http://json-schema-org/draft-07/schema#",
   "definitions": {
     "ClusterCloudWatch": {
       "properties": {
         "clusterLogging": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/ClusterCloudWatchLogging"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "clusterLogging"
+      ],
+      "additionalProperties": false
     },
     "ClusterCloudWatchLogging": {
       "properties": {
@@ -21,58 +23,22 @@
           "type": "array"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "enableTypes"
+      ],
+      "additionalProperties": false
     },
     "ClusterConfig": {
       "required": [
         "metadata"
       ],
       "properties": {
-        "kind": {
-          "type": "string",
-          "examples": [
-            "ClusterConfig"
-          ]
-        },
         "apiVersion": {
           "type": "string",
+          "x-intellij-html-description": "defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
           "examples": [
             "eksctl.io/v1alpha5"
           ]
-        },
-        "metadata": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/ClusterMeta"
-        },
-        "iam": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/ClusterIAM"
-        },
-        "vpc": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/ClusterVPC"
-        },
-        "nodeGroups": {
-          "items": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$ref": "#/definitions/NodeGroup"
-          },
-          "type": "array"
-        },
-        "managedNodeGroups": {
-          "items": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$ref": "#/definitions/ManagedNodeGroup"
-          },
-          "type": "array"
-        },
-        "fargateProfiles": {
-          "items": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$ref": "#/definitions/FargateProfile"
-          },
-          "type": "array"
         },
         "availabilityZones": {
           "items": {
@@ -81,24 +47,122 @@
           "type": "array"
         },
         "cloudWatch": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/ClusterCloudWatch"
         },
+        "fargateProfiles": {
+          "items": {
+            "$ref": "#/definitions/FargateProfile"
+          },
+          "type": "array"
+        },
+        "git": {
+          "$ref": "#/definitions/Git"
+        },
+        "iam": {
+          "$ref": "#/definitions/ClusterIAM"
+        },
+        "kind": {
+          "type": "string",
+          "x-intellij-html-description": "a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "examples": [
+            "ClusterConfig"
+          ]
+        },
+        "managedNodeGroups": {
+          "items": {
+            "$ref": "#/definitions/ManagedNodeGroup"
+          },
+          "type": "array"
+        },
+        "metadata": {
+          "$ref": "#/definitions/ClusterMeta"
+        },
+        "nodeGroups": {
+          "items": {
+            "$ref": "#/definitions/NodeGroup"
+          },
+          "type": "array"
+        },
         "secretsEncryption": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/SecretsEncryption"
         },
         "status": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/ClusterStatus"
         },
-        "git": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/Git"
+        "vpc": {
+          "$ref": "#/definitions/ClusterVPC"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "kind",
+        "apiVersion",
+        "metadata",
+        "iam",
+        "vpc",
+        "nodeGroups",
+        "managedNodeGroups",
+        "fargateProfiles",
+        "availabilityZones",
+        "cloudWatch",
+        "secretsEncryption",
+        "status",
+        "git"
+      ],
+      "additionalProperties": false
+    },
+    "ClusterConfigList": {
+      "properties": {
+        "apiVersion": {
+          "type": "string",
+          "x-intellij-html-description": "defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "examples": [
+            "eksctl.io/v1alpha5"
+          ]
+        },
+        "continue": {
+          "type": "string",
+          "description": "continue may be set if the user set a limit on the number of items returned, and indicates that the server has more data available. The value is opaque and may be used to issue another request to the endpoint that served this list to retrieve the next set of available objects. Continuing a consistent list may not be possible if the server configuration has changed or more than a few minutes have passed. The resourceVersion field returned when using this continue value will be identical to the value in the first response, unless you have received this token from an error message.",
+          "x-intellij-html-description": "continue may be set if the user set a limit on the number of items returned, and indicates that the server has more data available. The value is opaque and may be used to issue another request to the endpoint that served this list to retrieve the next set of available objects. Continuing a consistent list may not be possible if the server configuration has changed or more than a few minutes have passed. The resourceVersion field returned when using this continue value will be identical to the value in the first response, unless you have received this token from an error message."
+        },
+        "items": {
+          "items": {
+            "$ref": "#/definitions/ClusterConfig"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "type": "string",
+          "x-intellij-html-description": "a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "examples": [
+            "ClusterConfig"
+          ]
+        },
+        "remainingItemCount": {
+          "type": "integer",
+          "description": "remainingItemCount is the number of subsequent items in the list which are not included in this list response. If the list request contained label or field selectors, then the number of remaining items is unknown and the field will be left unset and omitted during serialization. If the list is complete (either because it is not chunking or because this is the last chunk), then there are no more remaining items and this field will be left unset and omitted during serialization. Servers older than v1.15 do not set this field. The intended use of the remainingItemCount is *estimating* the size of a collection. Clients should not rely on the remainingItemCount to be set or to be exact.",
+          "x-intellij-html-description": "remainingItemCount is the number of subsequent items in the list which are not included in this list response. If the list request contained label or field selectors, then the number of remaining items is unknown and the field will be left unset and omitted during serialization. If the list is complete (either because it is not chunking or because this is the last chunk), then there are no more remaining items and this field will be left unset and omitted during serialization. Servers older than v1.15 do not set this field. The intended use of the remainingItemCount is <em>estimating</em> the size of a collection. Clients should not rely on the remainingItemCount to be set or to be exact."
+        },
+        "resourceVersion": {
+          "type": "string",
+          "description": "String that identifies the server's internal version of this object that can be used by clients to determine when objects have changed. Value must be treated as opaque by clients and passed unmodified back to the server. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency",
+          "x-intellij-html-description": "String that identifies the server's internal version of this object that can be used by clients to determine when objects have changed. Value must be treated as opaque by clients and passed unmodified back to the server. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency"
+        },
+        "selfLink": {
+          "type": "string",
+          "description": "selfLink is a URL representing this object. Populated by the system. Read-only.  DEPRECATED Kubernetes will stop propagating this field in 1.20 release and the field is planned to be removed in 1.21 release.",
+          "x-intellij-html-description": "selfLink is a URL representing this object. Populated by the system. Read-only.  DEPRECATED Kubernetes will stop propagating this field in 1.20 release and the field is planned to be removed in 1.21 release."
+        }
+      },
+      "preferredOrder": [
+        "kind",
+        "apiVersion",
+        "selfLink",
+        "resourceVersion",
+        "continue",
+        "remainingItemCount",
+        "items"
+      ],
+      "additionalProperties": false
     },
     "ClusterEndpoints": {
       "properties": {
@@ -109,70 +173,59 @@
           "type": "boolean"
         }
       },
+      "preferredOrder": [
+        "privateAccess",
+        "publicAccess"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds cluster api server endpoint access information",
+      "x-intellij-html-description": "holds cluster api server endpoint access information"
     },
     "ClusterIAM": {
       "properties": {
-        "serviceRoleARN": {
-          "type": "string"
-        },
-        "serviceRolePermissionsBoundary": {
-          "type": "string"
-        },
         "fargatePodExecutionRoleARN": {
           "type": "string"
         },
         "fargatePodExecutionRolePermissionsBoundary": {
           "type": "string"
         },
-        "withOIDC": {
-          "type": "boolean"
-        },
         "serviceAccounts": {
           "items": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
             "$ref": "#/definitions/ClusterIAMServiceAccount"
           },
           "type": "array"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "ClusterIAMMeta": {
-      "properties": {
-        "name": {
+        },
+        "serviceRoleARN": {
           "type": "string"
         },
-        "namespace": {
+        "serviceRolePermissionsBoundary": {
           "type": "string"
         },
-        "labels": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
-          },
-          "type": "object"
-        },
-        "annotations": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
-          },
-          "type": "object"
+        "withOIDC": {
+          "type": "boolean"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "serviceRoleARN",
+        "serviceRolePermissionsBoundary",
+        "fargatePodExecutionRoleARN",
+        "fargatePodExecutionRolePermissionsBoundary",
+        "withOIDC",
+        "serviceAccounts"
+      ],
+      "additionalProperties": false
     },
     "ClusterIAMServiceAccount": {
       "properties": {
-        "metadata": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/ClusterIAMMeta"
+        "annotations": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object",
+          "default": "{}"
+        },
+        "attachPolicy": {
+          "$ref": "#/definitions/InlineDocument"
         },
         "attachPolicyARNs": {
           "items": {
@@ -180,32 +233,45 @@
           },
           "type": "array"
         },
-        "attachPolicy": {
-          "patternProperties": {
-            ".*": {
-              "additionalProperties": true
-            }
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
           },
-          "type": "object"
+          "type": "object",
+          "default": "{}"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
         },
         "permissionsBoundary": {
           "type": "string"
         },
         "status": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/ClusterIAMServiceAccountStatus"
         },
         "tags": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
+          "additionalProperties": {
+            "type": "string"
           },
-          "type": "object"
+          "type": "object",
+          "default": "{}"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "name",
+        "namespace",
+        "labels",
+        "annotations",
+        "attachPolicyARNs",
+        "attachPolicy",
+        "permissionsBoundary",
+        "status",
+        "tags"
+      ],
+      "additionalProperties": false
     },
     "ClusterIAMServiceAccountStatus": {
       "properties": {
@@ -213,8 +279,10 @@
           "type": "string"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "roleARN"
+      ],
+      "additionalProperties": false
     },
     "ClusterMeta": {
       "required": [
@@ -228,20 +296,24 @@
         "region": {
           "type": "string"
         },
+        "tags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object",
+          "default": "{}"
+        },
         "version": {
           "type": "string"
-        },
-        "tags": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
-          },
-          "type": "object"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "name",
+        "region",
+        "version",
+        "tags"
+      ],
+      "additionalProperties": false
     },
     "ClusterNAT": {
       "properties": {
@@ -249,97 +321,121 @@
           "type": "string"
         }
       },
+      "preferredOrder": [
+        "gateway"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds NAT gateway configuration options",
+      "x-intellij-html-description": "holds NAT gateway configuration options"
     },
+    "ClusterProvider": {},
     "ClusterStatus": {
       "properties": {
-        "endpoint": {
+        "arn": {
           "type": "string"
         },
         "certificateAuthorityData": {
-          "type": "string",
-          "media": {
-            "binaryEncoding": "base64"
-          }
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
-        "arn": {
+        "endpoint": {
           "type": "string"
         },
         "stackName": {
           "type": "string"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "endpoint",
+        "certificateAuthorityData",
+        "arn",
+        "stackName"
+      ],
+      "additionalProperties": false
     },
     "ClusterSubnets": {
       "properties": {
         "private": {
-          "patternProperties": {
-            ".*": {
-              "$schema": "http://json-schema.org/draft-04/schema#",
-              "$ref": "#/definitions/Network"
-            }
+          "additionalProperties": {
+            "$ref": "#/definitions/Network"
           },
-          "type": "object"
+          "type": "object",
+          "default": "{}"
         },
         "public": {
-          "patternProperties": {
-            ".*": {
-              "$ref": "#/definitions/Network"
-            }
+          "additionalProperties": {
+            "$ref": "#/definitions/Network"
           },
-          "type": "object"
+          "type": "object",
+          "default": "{}"
         }
       },
+      "preferredOrder": [
+        "private",
+        "public"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds private and public subnets",
+      "x-intellij-html-description": "holds private and public subnets"
     },
     "ClusterVPC": {
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "cidr": {
-          "type": "string"
-        },
-        "securityGroup": {
-          "type": "string"
-        },
-        "subnets": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/ClusterSubnets"
-        },
-        "extraCIDRs": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "sharedNodeSecurityGroup": {
-          "type": "string"
-        },
         "autoAllocateIPv6": {
           "type": "boolean"
         },
-        "nat": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/ClusterNAT"
-        },
+        "cidr": {},
         "clusterEndpoints": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/ClusterEndpoints"
+        },
+        "extraCIDRs": {
+          "items": {},
+          "type": "array",
+          "description": "for additional CIDR associations, e.g. to use with separate CIDR for private subnets or any ad-hoc subnets",
+          "x-intellij-html-description": "for additional CIDR associations, e.g. to use with separate CIDR for private subnets or any ad-hoc subnets"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nat": {
+          "$ref": "#/definitions/ClusterNAT"
         },
         "publicAccessCIDRs": {
           "items": {
             "type": "string"
           },
           "type": "array"
+        },
+        "securityGroup": {
+          "type": "string"
+        },
+        "sharedNodeSecurityGroup": {
+          "type": "string",
+          "description": "for pre-defined shared node SG",
+          "x-intellij-html-description": "for pre-defined shared node SG"
+        },
+        "subnets": {
+          "$ref": "#/definitions/ClusterSubnets",
+          "description": "subnets are either public or private for use with separate nodegroups these are keyed by AZ for convenience",
+          "x-intellij-html-description": "subnets are either public or private for use with separate nodegroups these are keyed by AZ for convenience"
         }
       },
+      "preferredOrder": [
+        "id",
+        "cidr",
+        "securityGroup",
+        "subnets",
+        "extraCIDRs",
+        "sharedNodeSecurityGroup",
+        "autoAllocateIPv6",
+        "nat",
+        "clusterEndpoints",
+        "publicAccessCIDRs"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds global subnet and all child public/private subnet",
+      "x-intellij-html-description": "holds global subnet and all child public/private subnet"
     },
     "FargateProfile": {
       "required": [
@@ -347,99 +443,105 @@
       ],
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "of the Fargate profile.",
+          "x-intellij-html-description": "of the Fargate profile."
         },
         "podExecutionRoleARN": {
-          "type": "string"
+          "type": "string",
+          "description": "IAM role's ARN to use to run pods onto Fargate.",
+          "x-intellij-html-description": "IAM role's ARN to use to run pods onto Fargate."
         },
         "selectors": {
           "items": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
             "$ref": "#/definitions/FargateProfileSelector"
           },
-          "type": "array"
+          "type": "array",
+          "description": "define the rules to select workload to schedule onto Fargate.",
+          "x-intellij-html-description": "define the rules to select workload to schedule onto Fargate."
         },
         "subnets": {
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "description": "which Fargate should use to do network placement of the selected workload. If none provided, all subnets for the cluster will be used.",
+          "x-intellij-html-description": "which Fargate should use to do network placement of the selected workload. If none provided, all subnets for the cluster will be used."
         },
         "tags": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
+          "additionalProperties": {
+            "type": "string"
           },
-          "type": "object"
+          "type": "object",
+          "default": "{}"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "name",
+        "podExecutionRoleARN",
+        "selectors",
+        "subnets",
+        "tags"
+      ],
+      "additionalProperties": false
     },
     "FargateProfileSelector": {
       "required": [
         "namespace"
       ],
       "properties": {
-        "namespace": {
-          "type": "string"
-        },
         "labels": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
+          "additionalProperties": {
+            "type": "string"
           },
-          "type": "object"
+          "type": "object",
+          "description": "Kubernetes label selectors to use to select workload.",
+          "x-intellij-html-description": "Kubernetes label selectors to use to select workload.",
+          "default": "{}"
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Kubernetes namespace from which to select workload.",
+          "x-intellij-html-description": "Kubernetes namespace from which to select workload."
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "namespace",
+        "labels"
+      ],
+      "additionalProperties": false
     },
     "Git": {
       "properties": {
-        "repo": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/Repo"
+        "bootstrapProfile": {
+          "$ref": "#/definitions/Profile"
         },
         "operator": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/Operator"
         },
-        "bootstrapProfile": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/Profile"
+        "repo": {
+          "$ref": "#/definitions/Repo"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "repo",
+        "operator",
+        "bootstrapProfile"
+      ],
+      "additionalProperties": false
+    },
+    "InlineDocument": {
+      "additionalProperties": {},
+      "type": "object",
+      "default": "{}"
     },
     "ManagedNodeGroup": {
       "required": [
         "name"
       ],
       "properties": {
-        "name": {
-          "type": "string"
-        },
         "amiFamily": {
           "type": "string"
-        },
-        "instanceType": {
-          "type": "string"
-        },
-        "desiredCapacity": {
-          "type": "integer"
-        },
-        "minSize": {
-          "type": "integer"
-        },
-        "maxSize": {
-          "type": "integer"
-        },
-        "volumeSize": {
-          "type": "integer"
         },
         "availabilityZones": {
           "items": {
@@ -447,34 +549,65 @@
           },
           "type": "array"
         },
-        "ssh": {
-          "$ref": "#/definitions/NodeGroupSSH"
-        },
-        "labels": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
-          },
-          "type": "object"
-        },
-        "privateNetworking": {
-          "type": "boolean"
-        },
-        "tags": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
-          },
-          "type": "object"
+        "desiredCapacity": {
+          "type": "integer"
         },
         "iam": {
           "$ref": "#/definitions/NodeGroupIAM"
+        },
+        "instanceType": {
+          "type": "string"
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object",
+          "default": "{}"
+        },
+        "maxSize": {
+          "type": "integer"
+        },
+        "minSize": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "privateNetworking": {
+          "type": "boolean",
+          "default": "false"
+        },
+        "ssh": {
+          "$ref": "#/definitions/NodeGroupSSH"
+        },
+        "tags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object",
+          "default": "{}"
+        },
+        "volumeSize": {
+          "type": "integer"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "name",
+        "amiFamily",
+        "instanceType",
+        "desiredCapacity",
+        "minSize",
+        "maxSize",
+        "volumeSize",
+        "availabilityZones",
+        "ssh",
+        "labels",
+        "privateNetworking",
+        "tags",
+        "iam"
+      ],
+      "additionalProperties": false
     },
     "MetricsCollection": {
       "required": [
@@ -491,47 +624,28 @@
           "type": "array"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "Network": {
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "cidr": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "granularity",
+        "metrics"
+      ],
+      "additionalProperties": false
     },
     "NodeGroup": {
       "required": [
         "name"
       ],
       "properties": {
-        "name": {
-          "type": "string"
-        },
         "ami": {
           "type": "string"
         },
         "amiFamily": {
           "type": "string"
         },
-        "instanceType": {
-          "type": "string"
-        },
-        "instancesDistribution": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/NodeGroupInstancesDistribution"
-        },
-        "instancePrefix": {
-          "type": "string"
-        },
-        "instanceName": {
-          "type": "string"
+        "asgMetricsCollection": {
+          "items": {
+            "$ref": "#/definitions/MetricsCollection"
+          },
+          "type": "array"
         },
         "availabilityZones": {
           "items": {
@@ -539,76 +653,8 @@
           },
           "type": "array"
         },
-        "tags": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
-          },
-          "type": "object"
-        },
-        "privateNetworking": {
-          "type": "boolean"
-        },
-        "securityGroups": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/NodeGroupSGs"
-        },
-        "desiredCapacity": {
-          "type": "integer"
-        },
-        "minSize": {
-          "type": "integer"
-        },
-        "maxSize": {
-          "type": "integer"
-        },
-        "asgMetricsCollection": {
-          "items": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$ref": "#/definitions/MetricsCollection"
-          },
-          "type": "array"
-        },
-        "ebsOptimized": {
-          "type": "boolean"
-        },
-        "volumeSize": {
-          "type": "integer"
-        },
-        "volumeType": {
-          "type": "string"
-        },
-        "volumeName": {
-          "type": "string"
-        },
-        "volumeEncrypted": {
-          "type": "boolean"
-        },
-        "volumeKmsKeyID": {
-          "type": "string"
-        },
-        "volumeIOPS": {
-          "type": "integer"
-        },
-        "maxPodsPerNode": {
-          "type": "integer"
-        },
-        "labels": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
-          },
-          "type": "object"
-        },
-        "taints": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
-          },
-          "type": "object"
+        "bottlerocket": {
+          "$ref": "#/definitions/NodeGroupBottlerocket"
         },
         "classicLoadBalancerNames": {
           "items": {
@@ -616,23 +662,54 @@
           },
           "type": "array"
         },
-        "targetGroupARNs": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+        "clusterDNS": {
+          "type": "string"
         },
-        "ssh": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/NodeGroupSSH"
+        "desiredCapacity": {
+          "type": "integer"
+        },
+        "ebsOptimized": {
+          "type": "boolean"
         },
         "iam": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/NodeGroupIAM"
         },
-        "bottlerocket": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/NodeGroupBottlerocket"
+        "instanceName": {
+          "type": "string"
+        },
+        "instancePrefix": {
+          "type": "string"
+        },
+        "instanceType": {
+          "type": "string"
+        },
+        "instancesDistribution": {
+          "$ref": "#/definitions/NodeGroupInstancesDistribution"
+        },
+        "kubeletExtraConfig": {
+          "$ref": "#/definitions/InlineDocument"
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object",
+          "default": "{}"
+        },
+        "maxPodsPerNode": {
+          "type": "integer"
+        },
+        "maxSize": {
+          "type": "integer"
+        },
+        "minSize": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "overrideBootstrapCommand": {
+          "type": "string"
         },
         "preBootstrapCommands": {
           "items": {
@@ -640,23 +717,92 @@
           },
           "type": "array"
         },
-        "overrideBootstrapCommand": {
-          "type": "string"
+        "privateNetworking": {
+          "type": "boolean",
+          "default": "false"
         },
-        "clusterDNS": {
-          "type": "string"
+        "securityGroups": {
+          "$ref": "#/definitions/NodeGroupSGs"
         },
-        "kubeletExtraConfig": {
-          "patternProperties": {
-            ".*": {
-              "additionalProperties": true
-            }
+        "ssh": {
+          "$ref": "#/definitions/NodeGroupSSH"
+        },
+        "tags": {
+          "additionalProperties": {
+            "type": "string"
           },
-          "type": "object"
+          "type": "object",
+          "default": "{}"
+        },
+        "taints": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object",
+          "default": "{}"
+        },
+        "targetGroupARNs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "volumeEncrypted": {
+          "type": "boolean"
+        },
+        "volumeIOPS": {
+          "type": "integer"
+        },
+        "volumeKmsKeyID": {
+          "type": "string"
+        },
+        "volumeName": {
+          "type": "string"
+        },
+        "volumeSize": {
+          "type": "integer"
+        },
+        "volumeType": {
+          "type": "string"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "name",
+        "ami",
+        "amiFamily",
+        "instanceType",
+        "instancesDistribution",
+        "instancePrefix",
+        "instanceName",
+        "availabilityZones",
+        "tags",
+        "privateNetworking",
+        "securityGroups",
+        "desiredCapacity",
+        "minSize",
+        "maxSize",
+        "asgMetricsCollection",
+        "ebsOptimized",
+        "volumeSize",
+        "volumeType",
+        "volumeName",
+        "volumeEncrypted",
+        "volumeKmsKeyID",
+        "volumeIOPS",
+        "maxPodsPerNode",
+        "labels",
+        "taints",
+        "classicLoadBalancerNames",
+        "targetGroupARNs",
+        "ssh",
+        "iam",
+        "bottlerocket",
+        "preBootstrapCommands",
+        "overrideBootstrapCommand",
+        "clusterDNS",
+        "kubeletExtraConfig"
+      ],
+      "additionalProperties": false
     },
     "NodeGroupBottlerocket": {
       "properties": {
@@ -664,16 +810,16 @@
           "type": "boolean"
         },
         "settings": {
-          "patternProperties": {
-            ".*": {
-              "additionalProperties": true
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/InlineDocument"
         }
       },
+      "preferredOrder": [
+        "enableAdminContainer",
+        "settings"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds the configuration for Bottlerocket based NodeGroups.",
+      "x-intellij-html-description": "holds the configuration for Bottlerocket based NodeGroups."
     },
     "NodeGroupIAM": {
       "properties": {
@@ -696,51 +842,73 @@
           "type": "string"
         },
         "withAddonPolicies": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/NodeGroupIAMAddonPolicies"
         }
       },
+      "preferredOrder": [
+        "attachPolicyARNs",
+        "instanceProfileARN",
+        "instanceRoleARN",
+        "instanceRoleName",
+        "instanceRolePermissionsBoundary",
+        "withAddonPolicies"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds all IAM attributes of a NodeGroup",
+      "x-intellij-html-description": "holds all IAM attributes of a NodeGroup"
     },
     "NodeGroupIAMAddonPolicies": {
       "properties": {
-        "imageBuilder": {
-          "type": "boolean"
-        },
-        "autoScaler": {
-          "type": "boolean"
-        },
-        "externalDNS": {
-          "type": "boolean"
-        },
-        "certManager": {
+        "albIngress": {
           "type": "boolean"
         },
         "appMesh": {
           "type": "boolean"
         },
-        "ebs": {
+        "autoScaler": {
           "type": "boolean"
         },
-        "fsx": {
+        "certManager": {
+          "type": "boolean"
+        },
+        "cloudWatch": {
+          "type": "boolean"
+        },
+        "ebs": {
           "type": "boolean"
         },
         "efs": {
           "type": "boolean"
         },
-        "albIngress": {
+        "externalDNS": {
+          "type": "boolean"
+        },
+        "fsx": {
+          "type": "boolean"
+        },
+        "imageBuilder": {
           "type": "boolean"
         },
         "xRay": {
           "type": "boolean"
-        },
-        "cloudWatch": {
-          "type": "boolean"
         }
       },
+      "preferredOrder": [
+        "imageBuilder",
+        "autoScaler",
+        "externalDNS",
+        "certManager",
+        "appMesh",
+        "ebs",
+        "fsx",
+        "efs",
+        "albIngress",
+        "xRay",
+        "cloudWatch"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds all IAM addon policies",
+      "x-intellij-html-description": "holds all IAM addon policies"
     },
     "NodeGroupInstancesDistribution": {
       "required": [
@@ -762,15 +930,24 @@
         "onDemandPercentageAboveBaseCapacity": {
           "type": "integer"
         },
-        "spotInstancePools": {
-          "type": "integer"
-        },
         "spotAllocationStrategy": {
           "type": "string"
+        },
+        "spotInstancePools": {
+          "type": "integer"
         }
       },
+      "preferredOrder": [
+        "instanceTypes",
+        "maxPrice",
+        "onDemandBaseCapacity",
+        "onDemandPercentageAboveBaseCapacity",
+        "spotInstancePools",
+        "spotAllocationStrategy"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds the configuration for spot instances",
+      "x-intellij-html-description": "holds the configuration for spot instances"
     },
     "NodeGroupSGs": {
       "properties": {
@@ -780,28 +957,34 @@
           },
           "type": "array"
         },
-        "withShared": {
+        "withLocal": {
           "type": "boolean"
         },
-        "withLocal": {
+        "withShared": {
           "type": "boolean"
         }
       },
+      "preferredOrder": [
+        "attachIDs",
+        "withShared",
+        "withLocal"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds all SG attributes of a NodeGroup",
+      "x-intellij-html-description": "holds all SG attributes of a NodeGroup"
     },
     "NodeGroupSSH": {
       "properties": {
         "allow": {
           "type": "boolean"
         },
-        "publicKeyPath": {
-          "type": "string"
-        },
         "publicKey": {
           "type": "string"
         },
         "publicKeyName": {
+          "type": "string"
+        },
+        "publicKeyPath": {
           "type": "string"
         },
         "sourceSecurityGroupIds": {
@@ -811,8 +994,19 @@
           "type": "array"
         }
       },
+      "preferredOrder": [
+        "allow",
+        "publicKeyPath",
+        "publicKey",
+        "publicKeyName",
+        "sourceSecurityGroupIds"
+      ],
       "additionalProperties": false,
-      "type": "object"
+      "description": "holds all the ssh access configuration to a NodeGroup",
+      "x-intellij-html-description": "holds all the ssh access configuration to a NodeGroup"
+    },
+    "NodeGroupType": {
+      "type": "string"
     },
     "Operator": {
       "properties": {
@@ -826,30 +1020,42 @@
           "type": "boolean"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "label",
+        "namespace",
+        "withHelm"
+      ],
+      "additionalProperties": false
     },
     "Profile": {
       "properties": {
-        "source": {
+        "outputPath": {
           "type": "string"
         },
         "revision": {
           "type": "string"
         },
-        "outputPath": {
+        "source": {
           "type": "string"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "source",
+        "revision",
+        "outputPath"
+      ],
+      "additionalProperties": false
     },
+    "ProviderConfig": {},
     "Repo": {
       "properties": {
-        "url": {
+        "branch": {
           "type": "string"
         },
-        "branch": {
+        "email": {
+          "type": "string"
+        },
+        "fluxPath": {
           "type": "string"
         },
         "paths": {
@@ -858,21 +1064,26 @@
           },
           "type": "array"
         },
-        "fluxPath": {
+        "privateSSHKeyPath": {
+          "type": "string"
+        },
+        "url": {
           "type": "string"
         },
         "user": {
           "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "privateSSHKeyPath": {
-          "type": "string"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "url",
+        "branch",
+        "paths",
+        "fluxPath",
+        "user",
+        "email",
+        "privateSSHKeyPath"
+      ],
+      "additionalProperties": false
     },
     "SecretsEncryption": {
       "required": [
@@ -883,8 +1094,23 @@
           "type": "string"
         }
       },
-      "additionalProperties": false,
-      "type": "object"
+      "preferredOrder": [
+        "keyARN"
+      ],
+      "additionalProperties": false
+    },
+    "SubnetTopology": {
+      "type": "string",
+      "description": "can be SubnetTopologyPrivate or SubnetTopologyPublic",
+      "x-intellij-html-description": "can be SubnetTopologyPrivate or SubnetTopologyPublic"
+    },
+    "asset": {},
+    "bindataFileInfo": {},
+    "bintree": {},
+    "nameSet": {
+      "additionalProperties": {},
+      "type": "object",
+      "default": "{}"
     }
   }
 }

@@ -43,7 +43,7 @@ function* template(definitions, parentDefinition, ref, ident, parent) {
     const allProperties = [];
     const seen = {};
 
-    for (const key of Object.keys(definitions[name].properties || [])) {
+    for (const key of definitions[name].preferredOrder || []) {
         allProperties.push([key, definitions[name].properties[key]]);
         seen[key] = true;
     }
