@@ -75,7 +75,11 @@ type ClusterIAMServiceAccountStatus struct {
 
 // NameString returns common name string
 func (sa *ClusterIAMServiceAccount) NameString() string {
-	return sa.Namespace + "/" + sa.Name
+	name := sa.Namespace
+	if sa.Name != "*" {
+		name = name + "/" + sa.Name
+	}
+	return name
 }
 
 // ClusterIAMServiceAccountNameStringToClusterIAMMeta constructs metav1.ObjectMeta from <ns>/<name> string

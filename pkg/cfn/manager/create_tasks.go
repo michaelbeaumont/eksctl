@@ -97,6 +97,9 @@ func (c *StackCollection) NewTasksToCreateIAMServiceAccounts(serviceAccounts []*
 
 	for i := range serviceAccounts {
 		sa := serviceAccounts[i]
+		if sa.Name == "*" {
+			continue
+		}
 		saTasks := &TaskTree{
 			Parallel:  false,
 			IsSubTask: true,
