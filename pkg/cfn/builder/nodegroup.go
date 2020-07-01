@@ -23,8 +23,8 @@ type NodeGroupResourceSet struct {
 	provider             api.ClusterProvider
 	clusterStackName     string
 	nodeGroupName        string
-	instanceProfileARN   *gfn.Value
-	securityGroups       []*gfn.Value
+	instanceProfileARN   string
+	securityGroups       []string
 	vpc                  *gfn.Value
 	userData             *gfn.Value
 }
@@ -114,6 +114,9 @@ func (n *NodeGroupResourceSet) newResource(name string, resource interface{}) *g
 	return n.rs.newResource(name, resource)
 }
 
+func (n *NodeGroupResourceSet) newResourceV4(name string, resource interface{}) string {
+	return n.rs.newResourceV4(name, resource)
+}
 func (n *NodeGroupResourceSet) addResourcesForNodeGroup() error {
 	launchTemplateName := gfn.MakeFnSubString(fmt.Sprintf("${%s}", gfn.StackName))
 	launchTemplateData := newLaunchTemplateData(n)

@@ -5,6 +5,8 @@ import (
 	"reflect"
 
 	cfn "github.com/aws/aws-sdk-go/service/cloudformation"
+	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
+	"github.com/awslabs/goformation/v4/intrinsics"
 	"github.com/weaveworks/eksctl/pkg/cfn/outputs"
 	gfn "github.com/weaveworks/goformation/cloudformation"
 )
@@ -47,12 +49,12 @@ func newResourceSet() *resourceSet {
 }
 
 // makeName is syntactic sugar for {"Fn::Sub": "${AWS::Stack}-<name>"}
-func makeName(suffix string) *gfn.Value {
-	return gfn.MakeFnSubString(fmt.Sprintf("${%s}-%s", gfn.StackName, suffix))
+func makeName(suffix string) string {
+	return gfnv4.Sub(fmt.Sprintf("${%s}-%s", gfn.StackName, suffix))
 }
 
 // makeSlice makes a slice from a list of arguments
-func makeSlice(i ...*gfn.Value) []*gfn.Value {
+func makeSlice(i ...string) []string {
 	return i
 }
 
@@ -100,7 +102,20 @@ func (r *resourceSet) newResource(name string, resource interface{}) *gfn.Value 
 	return gfn.MakeRef(name)
 }
 
+// newResourceV4 adds a resource, and adds Name tag if possible, it returns a reference
+func (r *resourceSet) newResourceV4(name string, resource interface{}) string {
+	r.template.Resources[name] = resource
+	return gfnv4.Ref(name)
+}
+
 // renderJSON renders template as JSON
 func (r *resourceSet) renderJSON() ([]byte, error) {
-	return r.template.JSON()
+	js, err := r.template.JSON()
+	if err != nil {
+		return []byte{}, err
+	}
+	opts := intrinsics.ProcessorOptions{
+		IntrinsicHandlerOverrides: gfnv4.EncoderIntrinsics,
+	}
+	return intrinsics.ProcessJSON(js, &opts)
 }

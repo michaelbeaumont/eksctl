@@ -7,13 +7,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws/arn"
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	cft "github.com/weaveworks/eksctl/pkg/cfn/template"
-	gfn "github.com/weaveworks/goformation/cloudformation"
+	cfniam "github.com/awslabs/goformation/v4/cloudformation/iam"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type cfnTemplate interface {
-	attachAllowPolicy(name string, refRole *gfn.Value, resources interface{}, actions []string)
-	newResource(name string, resource interface{}) *gfn.Value
+	attachAllowPolicy(name string, refRole string, resources interface{}, actions []string)
+	newResourceV4(name string, resource interface{}) string
 }
 
 // createRole creates an IAM role with policies required for the worker nodes and addons
@@ -22,21 +22,21 @@ func createRole(cfnTemplate cfnTemplate, iamConfig *api.NodeGroupIAM, managed bo
 	if err != nil {
 		return err
 	}
-	role := gfn.AWSIAMRole{
-		Path:                     gfn.NewString("/"),
+	role := cfniam.Role{
+		Path:                     "/",
 		AssumeRolePolicyDocument: cft.MakeAssumeRolePolicyDocumentForServices(MakeServiceRef("EC2")),
 		ManagedPolicyArns:        managedPolicyARNs,
 	}
 
 	if iamConfig.InstanceRoleName != "" {
-		role.RoleName = gfn.NewString(iamConfig.InstanceRoleName)
+		role.RoleName = iamConfig.InstanceRoleName
 	}
 
 	if iamConfig.InstanceRolePermissionsBoundary != "" {
-		role.PermissionsBoundary = gfn.NewString(iamConfig.InstanceRolePermissionsBoundary)
+		role.PermissionsBoundary = iamConfig.InstanceRolePermissionsBoundary
 	}
 
-	refIR := cfnTemplate.newResource(cfnIAMInstanceRoleName, &role)
+	refIR := cfnTemplate.newResourceV4(cfnIAMInstanceRoleName, &role)
 
 	if api.IsEnabled(iamConfig.WithAddonPolicies.AutoScaler) {
 		cfnTemplate.attachAllowPolicy("PolicyAutoScaling", refIR, "*",
@@ -271,7 +271,7 @@ func createRole(cfnTemplate cfnTemplate, iamConfig *api.NodeGroupIAM, managed bo
 	return nil
 }
 
-func makeManagedPolicies(iamConfig *api.NodeGroupIAM, managed bool) ([]*gfn.Value, error) {
+func makeManagedPolicies(iamConfig *api.NodeGroupIAM, managed bool) ([]string, error) {
 	managedPolicyNames := sets.NewString()
 	if len(iamConfig.AttachPolicyARNs) == 0 {
 		managedPolicyNames.Insert(iamDefaultNodePolicies...)
@@ -309,7 +309,7 @@ func makeManagedPolicies(iamConfig *api.NodeGroupIAM, managed bool) ([]*gfn.Valu
 	}
 
 	return append(
-		makeStringSlice(iamConfig.AttachPolicyARNs...),
+		makeSlice(iamConfig.AttachPolicyARNs...),
 		makePolicyARNs(managedPolicyNames.List()...)...,
 	), nil
 }

@@ -6,7 +6,7 @@ import (
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/cfn/outputs"
 	cft "github.com/weaveworks/eksctl/pkg/cfn/template"
-	gfn "github.com/weaveworks/goformation/cloudformation"
+	cfniam "github.com/awslabs/goformation/v4/cloudformation/iam"
 )
 
 const (
@@ -26,7 +26,7 @@ func AddResourcesForFargate(rs *resourceSet, cfg *api.ClusterConfig) error {
 	rs.withIAM = true
 
 	rs.template.Description = fargateRoleDescription
-	role := &gfn.AWSIAMRole{
+	role := &cfniam.Role{
 		AssumeRolePolicyDocument: cft.MakeAssumeRolePolicyDocumentForServices(
 			MakeServiceRef("EKS"),
 			MakeServiceRef("EKSFargatePods"), // Ensure that EKS can schedule pods onto Fargate.
@@ -37,7 +37,7 @@ func AddResourcesForFargate(rs *resourceSet, cfg *api.ClusterConfig) error {
 	}
 
 	if api.IsSetAndNonEmptyString(cfg.IAM.FargatePodExecutionRolePermissionsBoundary) {
-		role.PermissionsBoundary = gfn.NewString(*cfg.IAM.FargatePodExecutionRolePermissionsBoundary)
+		role.PermissionsBoundary = *cfg.IAM.FargatePodExecutionRolePermissionsBoundary
 	}
 
 	rs.newResource(fargateRoleName, role)

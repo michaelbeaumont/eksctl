@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	cfn "github.com/aws/aws-sdk-go/service/cloudformation"
-	gfn "github.com/weaveworks/goformation/cloudformation"
+	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
+	cfniam "github.com/awslabs/goformation/v4/cloudformation/iam"
 
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/cfn/outputs"
@@ -37,8 +38,8 @@ var (
 	}
 )
 
-func (c *resourceSet) attachAllowPolicy(name string, refRole *gfn.Value, resources interface{}, actions []string) {
-	c.newResource(name, &gfn.AWSIAMPolicy{
+func (c *resourceSet) attachAllowPolicy(name string, refRole string, resources interface{}, actions []string) {
+	c.newResource(name, &cfniam.Policy{
 		PolicyName: makeName(name),
 		Roles:      makeSlice(refRole),
 		PolicyDocument: cft.MakePolicyDocument(map[string]interface{}{
@@ -70,7 +71,7 @@ func (c *ClusterResourceSet) addResourcesForIAM() {
 
 	c.rs.withIAM = true
 
-	role := &gfn.AWSIAMRole{
+	role := &cfniam.Role{
 		AssumeRolePolicyDocument: cft.MakeAssumeRolePolicyDocumentForServices(
 			MakeServiceRef("EKS"),
 			// Ensure that EKS can schedule pods onto Fargate, should the user
@@ -82,9 +83,9 @@ func (c *ClusterResourceSet) addResourcesForIAM() {
 		),
 	}
 	if api.IsSetAndNonEmptyString(c.spec.IAM.ServiceRolePermissionsBoundary) {
-		role.PermissionsBoundary = gfn.NewString(*c.spec.IAM.ServiceRolePermissionsBoundary)
+		role.PermissionsBoundary = *c.spec.IAM.ServiceRolePermissionsBoundary
 	}
-	refSR := c.newResource("ServiceRole", role)
+	refSR := c.newResourceV4("ServiceRole", role)
 	c.rs.attachAllowPolicy("PolicyNLB", refSR, "*", []string{
 		"elasticloadbalancing:*",
 		"ec2:CreateSecurityGroup",
@@ -94,7 +95,7 @@ func (c *ClusterResourceSet) addResourcesForIAM() {
 		"cloudwatch:PutMetricData",
 	})
 
-	c.rs.defineOutputFromAtt(outputs.ClusterServiceRoleARN, "ServiceRole.Arn", true, func(v string) error {
+	c.rs.defineOutputFromAttV4(outputs.ClusterServiceRoleARN, "ServiceRole", "Arn", true, func(v string) error {
 		c.spec.IAM.ServiceRoleARN = &v
 		return nil
 	})
@@ -117,7 +118,7 @@ func (n *NodeGroupResourceSet) addResourcesForIAM() error {
 
 		// if instance profile is given, as well as the role, we simply use both and export the role
 		// (which is needed in order to authorise the nodegroup)
-		n.instanceProfileARN = gfn.NewString(n.spec.IAM.InstanceProfileARN)
+		n.instanceProfileARN = n.spec.IAM.InstanceProfileARN
 		if n.spec.IAM.InstanceRoleARN != "" {
 			n.rs.defineOutputWithoutCollector(outputs.NodeGroupInstanceProfileARN, n.spec.IAM.InstanceProfileARN, true)
 			n.rs.defineOutputWithoutCollector(outputs.NodeGroupInstanceRoleARN, n.spec.IAM.InstanceRoleARN, true)
@@ -135,12 +136,12 @@ func (n *NodeGroupResourceSet) addResourcesForIAM() error {
 
 	if n.spec.IAM.InstanceRoleARN != "" {
 		// if role is set, but profile isn't - create profile
-		n.newResource(cfnIAMInstanceProfileName, &gfn.AWSIAMInstanceProfile{
-			Path:  gfn.NewString("/"),
-			Roles: makeStringSlice(n.spec.IAM.InstanceRoleARN),
+		n.newResource(cfnIAMInstanceProfileName, &cfniam.InstanceProfile{
+			Path:  "/",
+			Roles: makeSlice(n.spec.IAM.InstanceRoleARN),
 		})
-		n.instanceProfileARN = gfn.MakeFnGetAttString(makeAttrAccessor(cfnIAMInstanceProfileName, "Arn"))
-		n.rs.defineOutputFromAtt(outputs.NodeGroupInstanceProfileARN, makeAttrAccessor(cfnIAMInstanceProfileName, "Arn"), true, func(v string) error {
+		n.instanceProfileARN = gfnv4.GetAtt(cfnIAMInstanceProfileName, "Arn")
+		n.rs.defineOutputFromAttV4(outputs.NodeGroupInstanceProfileARN, cfnIAMInstanceProfileName, "Arn", true, func(v string) error {
 			n.spec.IAM.InstanceProfileARN = v
 			return nil
 		})
@@ -159,17 +160,17 @@ func (n *NodeGroupResourceSet) addResourcesForIAM() error {
 		return err
 	}
 
-	n.newResource(cfnIAMInstanceProfileName, &gfn.AWSIAMInstanceProfile{
-		Path:  gfn.NewString("/"),
-		Roles: makeSlice(gfn.MakeRef(cfnIAMInstanceRoleName)),
+	n.newResource(cfnIAMInstanceProfileName, &cfniam.InstanceProfile{
+		Path:  "/",
+		Roles: makeSlice(gfnv4.Ref(cfnIAMInstanceRoleName)),
 	})
-	n.instanceProfileARN = gfn.MakeFnGetAttString(makeAttrAccessor(cfnIAMInstanceProfileName, "Arn"))
+	n.instanceProfileARN = gfnv4.GetAtt(cfnIAMInstanceProfileName, "Arn")
 
-	n.rs.defineOutputFromAtt(outputs.NodeGroupInstanceProfileARN, makeAttrAccessor(cfnIAMInstanceProfileName, "Arn"), true, func(v string) error {
+	n.rs.defineOutputFromAttV4(outputs.NodeGroupInstanceProfileARN, cfnIAMInstanceProfileName, "Arn", true, func(v string) error {
 		n.spec.IAM.InstanceProfileARN = v
 		return nil
 	})
-	n.rs.defineOutputFromAtt(outputs.NodeGroupInstanceRoleARN, makeAttrAccessor(cfnIAMInstanceRoleName, "Arn"), true, func(v string) error {
+	n.rs.defineOutputFromAttV4(outputs.NodeGroupInstanceRoleARN, cfnIAMInstanceRoleName, "Arn", true, func(v string) error {
 		n.spec.IAM.InstanceRoleARN = v
 		return nil
 	})

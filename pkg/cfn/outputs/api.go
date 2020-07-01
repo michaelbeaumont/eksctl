@@ -5,6 +5,7 @@ import (
 
 	cfn "github.com/aws/aws-sdk-go/service/cloudformation"
 	gfn "github.com/weaveworks/goformation/cloudformation"
+	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
 
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 )
@@ -117,8 +118,8 @@ func (c *CollectorSet) Define(template *gfn.Template, name string, value interfa
 	if template != nil {
 		o := map[string]interface{}{"Value": value}
 		if export {
-			o["Export"] = map[string]*gfn.Value{
-				"Name": gfn.MakeFnSubString(fmt.Sprintf("${%s}::%s", gfn.StackName, name)),
+			o["Export"] = map[string]string{
+				"Name": gfnv4.Sub(fmt.Sprintf("${%s}::%s", gfn.StackName, name)),
 			}
 		}
 		template.Outputs[name] = o
@@ -136,7 +137,17 @@ func (c *CollectorSet) DefineJoined(template *gfn.Template, name string, values 
 	c.Define(template, name, gfn.MakeFnJoin(",", values), export, fn)
 }
 
+// DefineJoinedV4 - a new output as comma-separated list
+func (c *CollectorSet) DefineJoinedV4(template *gfn.Template, name string, values []string, export bool, fn Collector) {
+	c.Define(template, name, gfnv4.Join(",", values), export, fn)
+}
+
 // DefineFromAtt - a new output from an attributes
 func (c *CollectorSet) DefineFromAtt(template *gfn.Template, name, att string, export bool, fn Collector) {
 	c.Define(template, name, gfn.MakeFnGetAttString(att), export, fn)
+}
+
+// DefineFromAttV4 - a new output from an attributes
+func (c *CollectorSet) DefineFromAttV4(template *gfn.Template, name, logicalName, att string, export bool, fn Collector) {
+	c.Define(template, name, gfnv4.GetAtt(logicalName, att), export, fn)
 }

@@ -3,6 +3,7 @@ package builder
 import (
 	"fmt"
 
+	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
 	gfn "github.com/weaveworks/goformation/cloudformation"
 )
 
@@ -26,20 +27,16 @@ var servicePrincipalPartitionMappings = map[string]map[string]string{
 
 const servicePrincipalPartitionMapName = "ServicePrincipalPartitionMap"
 
-func makeFnFindInMap(mapName string, args ...*gfn.Value) *gfn.Value {
-	return gfn.MakeIntrinsic(gfn.FnFindInMap, append([]*gfn.Value{gfn.NewString(mapName)}, args...))
-}
-
 // MakeServiceRef returns a reference to an intrinsic map function that looks up the servicePrincipalName
 // in servicePrincipalPartitionMappings
-func MakeServiceRef(servicePrincipalName string) *gfn.Value {
-	return makeFnFindInMap(servicePrincipalPartitionMapName, gfn.RefPartition, gfn.NewString(servicePrincipalName))
+func MakeServiceRef(servicePrincipalName string) string {
+	return gfnv4.FindInMap(servicePrincipalPartitionMapName, gfnv4.Ref(gfn.Partition), servicePrincipalName)
 }
 
-func makePolicyARNs(policyNames ...string) []*gfn.Value {
-	policyARNs := make([]*gfn.Value, len(policyNames))
+func makePolicyARNs(policyNames ...string) []string {
+	policyARNs := make([]string, len(policyNames))
 	for i, policy := range policyNames {
-		policyARNs[i] = gfn.MakeFnSubString(fmt.Sprintf("arn:${%s}:iam::aws:policy/%s", gfn.Partition, policy))
+		policyARNs[i] = gfnv4.Sub(fmt.Sprintf("arn:${%s}:iam::aws:policy/%s", gfn.Partition, policy))
 	}
 	return policyARNs
 }

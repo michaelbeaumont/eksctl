@@ -1,6 +1,12 @@
 package template
 
-import gfn "github.com/weaveworks/goformation/cloudformation"
+import (
+	//"encoding/base64"
+
+	//"fmt"
+
+	//gfn "github.com/weaveworks/goformation/cloudformation"
+)
 
 // AttachAllowPolicy constructs a role with allow policy for given resources and actions
 func (t *Template) AttachAllowPolicy(name string, refRole *Value, resources interface{}, actions []string) {
@@ -29,11 +35,11 @@ func MakePolicyDocument(statements ...MapOfInterfaces) MapOfInterfaces {
 }
 
 // MakeAssumeRolePolicyDocumentForServices constructs a trust policy for given services
-func MakeAssumeRolePolicyDocumentForServices(services ...*gfn.Value) MapOfInterfaces {
+func MakeAssumeRolePolicyDocumentForServices(services ...string) MapOfInterfaces {
 	return MakePolicyDocument(MapOfInterfaces{
 		"Effect": "Allow",
 		"Action": []string{"sts:AssumeRole"},
-		"Principal": map[string][]*gfn.Value{
+		"Principal": map[string][]string{
 			"Service": services,
 		},
 	})
