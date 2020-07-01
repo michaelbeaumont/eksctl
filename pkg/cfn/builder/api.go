@@ -1,11 +1,13 @@
 package builder
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 
 	cfn "github.com/aws/aws-sdk-go/service/cloudformation"
 	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
+	gfncfn "github.com/awslabs/goformation/v4/cloudformation/cloudformation"
 	"github.com/awslabs/goformation/v4/intrinsics"
 	"github.com/weaveworks/eksctl/pkg/cfn/outputs"
 	gfn "github.com/weaveworks/goformation/cloudformation"
@@ -24,6 +26,10 @@ type awsCloudFormationResource struct {
 	DependsOn    []string                     `json:",omitempty"`
 }
 
+func (r *awsCloudFormationResource) AWSCloudFormationType() string {
+	return r.Type
+}
+
 // ResourceSet is an interface which cluster and nodegroup builders
 // must implement
 type ResourceSet interface {
@@ -35,7 +41,7 @@ type ResourceSet interface {
 }
 
 type resourceSet struct {
-	template     *gfn.Template
+	template     *gfnv4.Template
 	outputs      *outputs.CollectorSet
 	withIAM      bool
 	withNamedIAM bool
@@ -43,7 +49,7 @@ type resourceSet struct {
 
 func newResourceSet() *resourceSet {
 	return &resourceSet{
-		template: gfn.NewTemplate(),
+		template: gfnv4.NewTemplate(),
 		outputs:  outputs.NewCollectorSet(nil),
 	}
 }
@@ -58,21 +64,12 @@ func makeSlice(i ...string) []string {
 	return i
 }
 
-// makeSlice makes a slice from a list of string arguments
-func makeStringSlice(s ...string) []*gfn.Value {
-	slice := []*gfn.Value{}
-	for _, i := range s {
-		slice = append(slice, gfn.NewString(i))
-	}
-	return slice
-}
-
 // makeAutoNameTag create a new Name tag in the following format:
 // {Key: "Name", Value: !Sub "${AWS::StackName}/<logicalResourceName>"}
-func makeAutoNameTag(suffix string) gfn.Tag {
-	return gfn.Tag{
-		Key:   gfn.NewString("Name"),
-		Value: gfn.MakeFnSubString(fmt.Sprintf("${%s}/%s", gfn.StackName, suffix)),
+func makeAutoNameTag(suffix string) gfncfn.Tag {
+	return gfncfn.Tag{
+		Key:   "Name",
+		Value: gfnv4.Sub(fmt.Sprintf("${%s}/%s", gfn.StackName, suffix)),
 	}
 }
 
@@ -88,34 +85,27 @@ func maybeSetNameTag(name string, resource interface{}) {
 		f := e.FieldByName("Tags")
 		if f.IsValid() && f.CanSet() {
 			tag := reflect.ValueOf(makeAutoNameTag(name))
-			if f.Type() == reflect.ValueOf([]gfn.Tag{}).Type() {
+			if f.Type() == reflect.ValueOf([]gfncfn.Tag{}).Type() {
 				f.Set(reflect.Append(f, tag))
 			}
 		}
 	}
 }
 
-// newResource adds a resource, and adds Name tag if possible, it returns a reference
-func (r *resourceSet) newResource(name string, resource interface{}) *gfn.Value {
-	maybeSetNameTag(name, resource)
-	r.template.Resources[name] = resource
-	return gfn.MakeRef(name)
-}
-
 // newResourceV4 adds a resource, and adds Name tag if possible, it returns a reference
-func (r *resourceSet) newResourceV4(name string, resource interface{}) string {
+func (r *resourceSet) newResourceV4(name string, resource gfnv4.Resource) string {
 	r.template.Resources[name] = resource
 	return gfnv4.Ref(name)
 }
 
 // renderJSON renders template as JSON
 func (r *resourceSet) renderJSON() ([]byte, error) {
-	js, err := r.template.JSON()
+	j, err := json.Marshal(r.template)
 	if err != nil {
 		return []byte{}, err
 	}
 	opts := intrinsics.ProcessorOptions{
 		IntrinsicHandlerOverrides: gfnv4.EncoderIntrinsics,
 	}
-	return intrinsics.ProcessJSON(js, &opts)
+	return intrinsics.ProcessJSON(j, &opts)
 }

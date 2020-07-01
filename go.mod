@@ -8,7 +8,7 @@ require (
 	github.com/Azure/go-autorest/autorest v0.10.0 // indirect
 	github.com/Azure/go-autorest/autorest/azure/auth v0.4.2 // indirect
 	github.com/aws/aws-sdk-go v1.30.11
-	github.com/awslabs/goformation/v4 v4.1.0
+	github.com/awslabs/goformation/v4 v4.11.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bxcodec/faker v2.0.1+incompatible
 	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7

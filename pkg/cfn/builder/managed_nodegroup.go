@@ -47,7 +47,10 @@ type remoteAccessConfig struct {
 	SourceSecurityGroups []*string `json:"SourceSecurityGroups,omitempty"`
 }
 
-// TODO consider using the Template.Resource interface
+// AWSCloudFormationType returns the AWS CloudFormation resource type
+func (r *managedNodeGroup) AWSCloudFormationType() string {
+	return "AWS::EKS::ManagedNodegroup"
+}
 
 // MarshalJSON returns the JSON encoding for this CloudFormation resource
 func (e *managedNodeGroup) MarshalJSON() ([]byte, error) {
@@ -124,7 +127,7 @@ func (m *ManagedNodeGroupResourceSet) AddAllResources() error {
 		managedResource.DiskSize = *m.nodeGroup.VolumeSize
 	}
 
-	m.newResource("ManagedNodeGroup", managedResource)
+	m.newResourceV4("ManagedNodeGroup", managedResource)
 
 	return nil
 }

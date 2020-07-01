@@ -6,6 +6,8 @@ import (
 
 	cfn "github.com/aws/aws-sdk-go/service/cloudformation"
 	gfn "github.com/weaveworks/goformation/cloudformation"
+	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
+	ec2 "github.com/awslabs/goformation/v4/cloudformation/ec2"
 
 	"github.com/kris-nova/logger"
 
@@ -25,8 +27,8 @@ type NodeGroupResourceSet struct {
 	nodeGroupName        string
 	instanceProfileARN   string
 	securityGroups       []string
-	vpc                  *gfn.Value
-	userData             *gfn.Value
+	vpc                  string
+	userData             string
 }
 
 // NewNodeGroupResourceSet returns a resource set for a nodegroup embedded in a cluster config
@@ -57,13 +59,13 @@ func (n *NodeGroupResourceSet) AddAllResources() error {
 	n.rs.defineOutputWithoutCollector(outputs.NodeGroupFeatureSharedSecurityGroup, n.spec.SecurityGroups.WithShared, false)
 	n.rs.defineOutputWithoutCollector(outputs.NodeGroupFeatureLocalSecurityGroup, n.spec.SecurityGroups.WithLocal, false)
 
-	n.vpc = makeImportValue(n.clusterStackName, outputs.ClusterVPC)
+	n.vpc = makeImportValueV4(n.clusterStackName, outputs.ClusterVPC)
 
 	userData, err := nodebootstrap.NewUserData(n.clusterSpec, n.spec)
 	if err != nil {
 		return err
 	}
-	n.userData = gfn.NewString(userData)
+	n.userData = userData
 
 	// Ensure MinSize is set, as it is required by the ASG cfn resource
 	if n.spec.MinSize == nil {
@@ -106,51 +108,47 @@ func (n *NodeGroupResourceSet) RenderJSON() ([]byte, error) {
 }
 
 // Template returns the CloudFormation template
-func (n *NodeGroupResourceSet) Template() gfn.Template {
+func (n *NodeGroupResourceSet) Template() gfnv4.Template {
 	return *n.rs.template
 }
 
-func (n *NodeGroupResourceSet) newResource(name string, resource interface{}) *gfn.Value {
-	return n.rs.newResource(name, resource)
-}
-
-func (n *NodeGroupResourceSet) newResourceV4(name string, resource interface{}) string {
+func (n *NodeGroupResourceSet) newResourceV4(name string, resource gfnv4.Resource) string {
 	return n.rs.newResourceV4(name, resource)
 }
 func (n *NodeGroupResourceSet) addResourcesForNodeGroup() error {
-	launchTemplateName := gfn.MakeFnSubString(fmt.Sprintf("${%s}", gfn.StackName))
+	launchTemplateName := gfnv4.Sub(fmt.Sprintf("${%s}", gfn.StackName))
 	launchTemplateData := newLaunchTemplateData(n)
 
 	if n.spec.SSH != nil && api.IsSetAndNonEmptyString(n.spec.SSH.PublicKeyName) {
-		launchTemplateData.KeyName = gfn.NewString(*n.spec.SSH.PublicKeyName)
+		launchTemplateData.KeyName = *n.spec.SSH.PublicKeyName
 	}
 
 	if volumeSize := n.spec.VolumeSize; volumeSize != nil && *volumeSize > 0 {
 		var (
-			kmsKeyID   *gfn.Value
-			volumeIOPS *gfn.Value
+			kmsKeyID   string
+			volumeIOPS int
 		)
 		if api.IsSetAndNonEmptyString(n.spec.VolumeKmsKeyID) {
-			kmsKeyID = gfn.NewString(*n.spec.VolumeKmsKeyID)
+			kmsKeyID = *n.spec.VolumeKmsKeyID
 		}
 
 		if *n.spec.VolumeType == api.NodeVolumeTypeIO1 {
-			volumeIOPS = gfn.NewInteger(*n.spec.VolumeIOPS)
+			volumeIOPS = *n.spec.VolumeIOPS
 		}
 
-		launchTemplateData.BlockDeviceMappings = []gfn.AWSEC2LaunchTemplate_BlockDeviceMapping{{
-			DeviceName: gfn.NewString(*n.spec.VolumeName),
-			Ebs: &gfn.AWSEC2LaunchTemplate_Ebs{
-				VolumeSize: gfn.NewInteger(*volumeSize),
-				VolumeType: gfn.NewString(*n.spec.VolumeType),
-				Encrypted:  gfn.NewBoolean(*n.spec.VolumeEncrypted),
+		launchTemplateData.BlockDeviceMappings = []ec2.LaunchTemplate_BlockDeviceMapping{{
+			DeviceName: *n.spec.VolumeName,
+			Ebs: &ec2.LaunchTemplate_Ebs{
+				VolumeSize: *volumeSize,
+				VolumeType: *n.spec.VolumeType,
+				Encrypted:  *n.spec.VolumeEncrypted,
 				KmsKeyId:   kmsKeyID,
 				Iops:       volumeIOPS,
 			},
 		}}
 	}
 
-	n.newResource("NodeGroupLaunchTemplate", &gfn.AWSEC2LaunchTemplate{
+	n.newResourceV4("NodeGroupLaunchTemplate", &ec2.LaunchTemplate{
 		LaunchTemplateName: launchTemplateName,
 		LaunchTemplateData: launchTemplateData,
 	})
@@ -188,7 +186,7 @@ func (n *NodeGroupResourceSet) addResourcesForNodeGroup() error {
 	}
 
 	asg := nodeGroupResource(launchTemplateName, vpcZoneIdentifier, tags, n.spec)
-	n.newResource("NodeGroup", asg)
+	n.newResourceV4("NodeGroup", asg)
 
 	return nil
 }
@@ -236,16 +234,14 @@ func AssignSubnets(availabilityZones []string, clusterStackName string, clusterS
 		return subnetIDs, nil
 	}
 
-	var subnets *gfn.Value
+	var subnets string
 	if privateNetworking {
-		subnets = makeImportValue(clusterStackName, outputs.ClusterSubnetsPrivate)
+		subnets = makeImportValueV4(clusterStackName, outputs.ClusterSubnetsPrivate)
 	} else {
-		subnets = makeImportValue(clusterStackName, outputs.ClusterSubnetsPublic)
+		subnets = makeImportValueV4(clusterStackName, outputs.ClusterSubnetsPublic)
 	}
 
-	return map[string][]interface{}{
-		gfn.FnSplit: {",", subnets},
-	}, nil
+	return gfnv4.Split(",", subnets), nil
 }
 
 // GetAllOutputs collects all outputs of the nodegroup
@@ -253,36 +249,36 @@ func (n *NodeGroupResourceSet) GetAllOutputs(stack cfn.Stack) error {
 	return n.rs.GetAllOutputs(stack)
 }
 
-func newLaunchTemplateData(n *NodeGroupResourceSet) *gfn.AWSEC2LaunchTemplate_LaunchTemplateData {
-	launchTemplateData := &gfn.AWSEC2LaunchTemplate_LaunchTemplateData{
-		IamInstanceProfile: &gfn.AWSEC2LaunchTemplate_IamInstanceProfile{
+func newLaunchTemplateData(n *NodeGroupResourceSet) *ec2.LaunchTemplate_LaunchTemplateData {
+	launchTemplateData := &ec2.LaunchTemplate_LaunchTemplateData{
+		IamInstanceProfile: &ec2.LaunchTemplate_IamInstanceProfile{
 			Arn: n.instanceProfileARN,
 		},
-		ImageId:  gfn.NewString(n.spec.AMI),
+		ImageId:  n.spec.AMI,
 		UserData: n.userData,
-		NetworkInterfaces: []gfn.AWSEC2LaunchTemplate_NetworkInterface{{
+		NetworkInterfaces: []ec2.LaunchTemplate_NetworkInterface{{
 			// Explicitly un-setting this so that it doesn't get defaulted to true
-			AssociatePublicIpAddress: nil,
-			DeviceIndex:              gfn.NewInteger(0),
+			AssociatePublicIpAddress: false,
+			DeviceIndex:              0,
 			Groups:                   n.securityGroups,
 		}},
-		MetadataOptions: &gfn.AWSEC2LaunchTemplate_MetadataOptions{
-			HttpPutResponseHopLimit: gfn.NewInteger(2),
+		MetadataOptions: &ec2.LaunchTemplate_MetadataOptions{
+			HttpPutResponseHopLimit: 2,
 		},
 	}
 	if !api.HasMixedInstances(n.spec) {
-		launchTemplateData.InstanceType = gfn.NewString(n.spec.InstanceType)
+		launchTemplateData.InstanceType = n.spec.InstanceType
 	} else {
-		launchTemplateData.InstanceType = gfn.NewString(n.spec.InstancesDistribution.InstanceTypes[0])
+		launchTemplateData.InstanceType = n.spec.InstancesDistribution.InstanceTypes[0]
 	}
 	if n.spec.EBSOptimized != nil {
-		launchTemplateData.EbsOptimized = gfn.NewBoolean(*n.spec.EBSOptimized)
+		launchTemplateData.EbsOptimized = *n.spec.EBSOptimized
 	}
 
 	return launchTemplateData
 }
 
-func nodeGroupResource(launchTemplateName *gfn.Value, vpcZoneIdentifier interface{}, tags []map[string]interface{}, ng *api.NodeGroup) *awsCloudFormationResource {
+func nodeGroupResource(launchTemplateName string, vpcZoneIdentifier interface{}, tags []map[string]interface{}, ng *api.NodeGroup) *awsCloudFormationResource {
 	ngProps := map[string]interface{}{
 		"VPCZoneIdentifier": vpcZoneIdentifier,
 		"Tags":              tags,
@@ -310,7 +306,7 @@ func nodeGroupResource(launchTemplateName *gfn.Value, vpcZoneIdentifier interfac
 	} else {
 		ngProps["LaunchTemplate"] = map[string]interface{}{
 			"LaunchTemplateName": launchTemplateName,
-			"Version":            gfn.MakeFnGetAttString("NodeGroupLaunchTemplate.LatestVersionNumber"),
+			"Version":            gfnv4.GetAtt("NodeGroupLaunchTemplate", "LatestVersionNumber"),
 		}
 	}
 
@@ -326,7 +322,7 @@ func nodeGroupResource(launchTemplateName *gfn.Value, vpcZoneIdentifier interfac
 	}
 }
 
-func mixedInstancesPolicy(launchTemplateName *gfn.Value, ng *api.NodeGroup) *map[string]interface{} {
+func mixedInstancesPolicy(launchTemplateName string, ng *api.NodeGroup) *map[string]interface{} {
 	instanceTypes := ng.InstancesDistribution.InstanceTypes
 	overrides := make([]map[string]string, len(instanceTypes))
 
@@ -339,7 +335,7 @@ func mixedInstancesPolicy(launchTemplateName *gfn.Value, ng *api.NodeGroup) *map
 		"LaunchTemplate": map[string]interface{}{
 			"LaunchTemplateSpecification": map[string]interface{}{
 				"LaunchTemplateName": launchTemplateName,
-				"Version":            gfn.MakeFnGetAttString("NodeGroupLaunchTemplate.LatestVersionNumber"),
+				"Version":            gfnv4.GetAtt("NodeGroupLaunchTemplate", "LatestVersionNumber"),
 			},
 
 			"Overrides": overrides,

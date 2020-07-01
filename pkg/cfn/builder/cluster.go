@@ -2,15 +2,14 @@ package builder
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 
 	cfn "github.com/aws/aws-sdk-go/service/cloudformation"
+	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
+	gfneks "github.com/awslabs/goformation/v4/cloudformation/eks"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	gfn "github.com/weaveworks/goformation/cloudformation"
-	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
-	gfneks "github.com/awslabs/goformation/v4/cloudformation/eks"
 
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/cfn/outputs"
@@ -78,7 +77,7 @@ func (c *ClusterResourceSet) AddAllResources() error {
 		c.addResourcesForFargate()
 	}
 
-	c.rs.defineOutput(outputs.ClusterStackName, gfn.RefStackName, false, func(v string) error {
+	c.rs.defineOutput(outputs.ClusterStackName, gfnv4.Ref(gfn.StackName), false, func(v string) error {
 		if c.spec.Status == nil {
 			c.spec.Status = &api.ClusterStatus{}
 		}
@@ -103,7 +102,7 @@ func (c *ClusterResourceSet) RenderJSON() ([]byte, error) {
 }
 
 // Template returns the CloudFormation template
-func (c *ClusterResourceSet) Template() gfn.Template {
+func (c *ClusterResourceSet) Template() gfnv4.Template {
 	return *c.rs.template
 }
 
@@ -113,29 +112,8 @@ func HasManagedNodesSG(stackResources *gjson.Result) bool {
 	return stackResources.Get(cfnIngressClusterToNodeSGResource).Exists()
 }
 
-func (c *ClusterResourceSet) newResource(name string, resource interface{}) *gfn.Value {
-	return c.rs.newResource(name, resource)
-}
-func (c *ClusterResourceSet) newResourceV4(name string, resource interface{}) string {
+func (c *ClusterResourceSet) newResourceV4(name string, resource gfnv4.Resource) string {
 	return c.rs.newResourceV4(name, resource)
-}
-
-// TODO use goformation after support is out
-type awsEKSClusterKMS struct {
-	*awsEKSCluster   `json:",inline"`
-	EncryptionConfig []*encryptionConfig `json:"EncryptionConfig,omitempty"`
-}
-
-func (e *awsEKSClusterKMS) MarshalJSON() ([]byte, error) {
-	type Properties awsEKSClusterKMS
-	val, err := json.Marshal(&struct {
-		Type       string
-		Properties Properties
-	}{
-		Type:       "AWS::EKS::Cluster",
-		Properties: Properties(*e),
-	})
-	return val, err
 }
 
 type encryptionProvider struct {
@@ -166,26 +144,24 @@ func (c *ClusterResourceSet) addResourcesForControlPlane() {
 		serviceRoleARN = *c.spec.IAM.ServiceRoleARN
 	}
 
-	var encryptionConfigs []*encryptionConfig
+	var encryptionConfigs []gfneks.Cluster_EncryptionConfig
 	if c.spec.SecretsEncryption != nil && c.spec.SecretsEncryption.KeyARN != nil {
-		encryptionConfigs = []*encryptionConfig{
+		encryptionConfigs = []gfneks.Cluster_EncryptionConfig{
 			{
 				Resources: []string{"secrets"},
-				Provider: &encryptionProvider{
+				Provider: &gfneks.Cluster_Provider{
 					KeyArn: *c.spec.SecretsEncryption.KeyARN,
 				},
 			},
 		}
 	}
 
-	c.newResource("ControlPlane", &awsEKSClusterKMS{
-		awsEKSCluster: &awsEKSCluster{
-			Name:               c.spec.Metadata.Name,
-			RoleArn:            serviceRoleARN,
-			Version:            c.spec.Metadata.Version,
-			ResourcesVpcConfig: clusterVPC,
-		},
-		EncryptionConfig: encryptionConfigs,
+	c.newResourceV4("ControlPlane", &gfneks.Cluster{
+		Name:               c.spec.Metadata.Name,
+		RoleArn:            serviceRoleARN,
+		Version:            c.spec.Metadata.Version,
+		ResourcesVpcConfig: clusterVPC,
+		EncryptionConfig:   encryptionConfigs,
 	})
 
 	if c.spec.Status == nil {

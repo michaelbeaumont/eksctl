@@ -114,7 +114,7 @@ func (c *CollectorSet) MustCollect(stack cfn.Stack) error {
 
 // Define a new output, if template is given it will be declared in the it
 // and optionally export too
-func (c *CollectorSet) Define(template *gfn.Template, name string, value interface{}, export bool, fn Collector) {
+func (c *CollectorSet) Define(template *gfnv4.Template, name string, value interface{}, export bool, fn Collector) {
 	if template != nil {
 		o := map[string]interface{}{"Value": value}
 		if export {
@@ -128,26 +128,16 @@ func (c *CollectorSet) Define(template *gfn.Template, name string, value interfa
 }
 
 // DefineWithoutCollector allows bare outputs
-func (c *CollectorSet) DefineWithoutCollector(template *gfn.Template, name string, value interface{}, export bool) {
+func (c *CollectorSet) DefineWithoutCollector(template *gfnv4.Template, name string, value interface{}, export bool) {
 	c.Define(template, name, value, export, func(_ string) error { return nil })
 }
 
-// DefineJoined - a new output as comma-separated list
-func (c *CollectorSet) DefineJoined(template *gfn.Template, name string, values []*gfn.Value, export bool, fn Collector) {
-	c.Define(template, name, gfn.MakeFnJoin(",", values), export, fn)
-}
-
 // DefineJoinedV4 - a new output as comma-separated list
-func (c *CollectorSet) DefineJoinedV4(template *gfn.Template, name string, values []string, export bool, fn Collector) {
+func (c *CollectorSet) DefineJoinedV4(template *gfnv4.Template, name string, values []string, export bool, fn Collector) {
 	c.Define(template, name, gfnv4.Join(",", values), export, fn)
 }
 
-// DefineFromAtt - a new output from an attributes
-func (c *CollectorSet) DefineFromAtt(template *gfn.Template, name, att string, export bool, fn Collector) {
-	c.Define(template, name, gfn.MakeFnGetAttString(att), export, fn)
-}
-
 // DefineFromAttV4 - a new output from an attributes
-func (c *CollectorSet) DefineFromAttV4(template *gfn.Template, name, logicalName, att string, export bool, fn Collector) {
+func (c *CollectorSet) DefineFromAttV4(template *gfnv4.Template, name, logicalName, att string, export bool, fn Collector) {
 	c.Define(template, name, gfnv4.GetAtt(logicalName, att), export, fn)
 }

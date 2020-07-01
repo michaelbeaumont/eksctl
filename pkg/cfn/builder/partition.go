@@ -41,6 +41,6 @@ func makePolicyARNs(policyNames ...string) []string {
 	return policyARNs
 }
 
-func addARNPartitionPrefix(s string) *gfn.Value {
-	return gfn.MakeFnSubString(fmt.Sprintf("arn:${%s}:%s", gfn.Partition, s))
+func addARNPartitionPrefix(s string) string {
+	return gfnv4.Sub(fmt.Sprintf("arn:${%s}:%s", gfn.Partition, s))
 }

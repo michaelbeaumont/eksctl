@@ -7,13 +7,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/arn"
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	cft "github.com/weaveworks/eksctl/pkg/cfn/template"
+	gfnv4 "github.com/awslabs/goformation/v4/cloudformation"
 	cfniam "github.com/awslabs/goformation/v4/cloudformation/iam"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type cfnTemplate interface {
 	attachAllowPolicy(name string, refRole string, resources interface{}, actions []string)
-	newResourceV4(name string, resource interface{}) string
+	newResourceV4(name string, resource gfnv4.Resource) string
 }
 
 // createRole creates an IAM role with policies required for the worker nodes and addons

@@ -1,13 +1,12 @@
 package builder
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	cfn "github.com/awslabs/goformation/v4/cloudformation"
-	cfnt "github.com/awslabs/goformation/v4/cloudformation/tags"
 	ec2 "github.com/awslabs/goformation/v4/cloudformation/ec2"
+	cfnt "github.com/awslabs/goformation/v4/cloudformation/tags"
 
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/cfn/outputs"
@@ -58,7 +57,7 @@ func (c *ClusterResourceSet) addSubnets(refRT string, topology api.SubnetTopolog
 			subnet.MapPublicIpOnLaunch = true
 		}
 		refSubnet := c.newResourceV4("Subnet"+alias, subnet)
-		c.newResource("RouteTableAssociation"+alias, &ec2.SubnetRouteTableAssociation{
+		c.newResourceV4("RouteTableAssociation"+alias, &ec2.SubnetRouteTableAssociation{
 			SubnetId:     refSubnet,
 			RouteTableId: refRT,
 		})
@@ -75,7 +74,7 @@ func (c *ClusterResourceSet) addSubnets(refRT string, topology api.SubnetTopolog
 			refSubnetSlices := cfn.CIDR(
 				refAutoAllocateCIDRv6, 8, 64,
 			)
-			c.newResource(alias+"CIDRv6", &ec2.SubnetCidrBlock{
+			c.newResourceV4(alias+"CIDRv6", &ec2.SubnetCidrBlock{
 				SubnetId:      refSubnet,
 				Ipv6CidrBlock: cfn.Select(subnetIndexForIPv6, []string{refSubnetSlices}),
 			})
@@ -84,52 +83,6 @@ func (c *ClusterResourceSet) addSubnets(refRT string, topology api.SubnetTopolog
 
 		c.subnets[topology] = append(c.subnets[topology], refSubnet)
 	}
-}
-
-// route adds DependsOn support to the AWSEC2Route struct
-type route struct {
-	AWSEC2Route ec2.Route
-	DependsOn   []string
-}
-
-// MarshalJSON is a custom JSON marshalling hook that adds DependsOn to the
-// legacy goformation struct AWSEC2Route
-func (r *route) MarshalJSON() ([]byte, error) {
-	type Properties ec2.Route
-	return json.Marshal(&struct {
-		Type       string
-		Properties Properties
-		DependsOn  []string
-	}{
-		Type:       r.AWSEC2Route.AWSCloudFormationType(),
-		Properties: (Properties)(r.AWSEC2Route),
-		DependsOn:  r.DependsOn,
-	})
-}
-
-// UnmarshalJSON is a custom JSON unmarshalling hook that adds DependsOn to the
-// legacy goformation struct AWSEC2Route
-func (r *route) UnmarshalJSON(b []byte) error {
-	type Properties ec2.Route
-	res := &struct {
-		Type       string
-		Properties *Properties
-		DependsOn  *[]string
-	}{}
-	if err := json.Unmarshal(b, &res); err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		return err
-	}
-
-	// If the resource has no Properties set, it could be nil
-	if res.Properties != nil {
-		r.AWSEC2Route = ec2.Route(*res.Properties)
-	}
-	if res.DependsOn != nil {
-		r.DependsOn = *res.DependsOn
-	}
-
-	return nil
 }
 
 //nolint:interfacer
@@ -142,7 +95,7 @@ func (c *ClusterResourceSet) addResourcesForVPC() error {
 	})
 
 	if api.IsEnabled(c.spec.VPC.AutoAllocateIPv6) {
-		c.newResource("AutoAllocatedCIDRv6", &ec2.VPCCidrBlock{
+		c.newResourceV4("AutoAllocatedCIDRv6", &ec2.VPCCidrBlock{
 			VpcId:                       c.vpc,
 			AmazonProvidedIpv6CidrBlock: true,
 		})
@@ -152,7 +105,7 @@ func (c *ClusterResourceSet) addResourcesForVPC() error {
 
 	refIG := c.newResourceV4("InternetGateway", &ec2.InternetGateway{})
 	vpcGA := "VPCGatewayAttachment"
-	c.newResource(vpcGA, &ec2.VPCGatewayAttachment{
+	c.newResourceV4(vpcGA, &ec2.VPCGatewayAttachment{
 		InternetGatewayId: refIG,
 		VpcId:             c.vpc,
 	})
@@ -161,13 +114,11 @@ func (c *ClusterResourceSet) addResourcesForVPC() error {
 		VpcId: c.vpc,
 	})
 
-	c.newResource("PublicSubnetRoute", &route{
-		AWSEC2Route: ec2.Route{
-			RouteTableId:         refPublicRT,
-			DestinationCidrBlock: internetCIDR,
-			GatewayId:            refIG,
-		},
-		DependsOn: []string{vpcGA},
+	c.newResourceV4("PublicSubnetRoute", &ec2.Route{
+		RouteTableId:               refPublicRT,
+		DestinationCidrBlock:       internetCIDR,
+		GatewayId:                  refIG,
+		AWSCloudFormationDependsOn: []string{vpcGA},
 	})
 
 	c.addSubnets(refPublicRT, api.SubnetTopologyPublic, c.spec.VPC.Subnets.Public)
@@ -263,7 +214,7 @@ func (c *ClusterResourceSet) addResourcesForSecurityGroups() {
 			GroupDescription: "Communication between all nodes in the cluster",
 			VpcId:            c.vpc,
 		})
-		c.newResource("IngressInterNodeGroupSG", &ec2.SecurityGroupIngress{
+		c.newResourceV4("IngressInterNodeGroupSG", &ec2.SecurityGroupIngress{
 			GroupId:               refClusterSharedNodeSG,
 			SourceSecurityGroupId: refClusterSharedNodeSG,
 			Description:           "Allow nodes to communicate with each other (all ports)",
@@ -275,7 +226,7 @@ func (c *ClusterResourceSet) addResourcesForSecurityGroups() {
 			// To enable communication between both managed and unmanaged nodegroups, this allows ingress traffic from
 			// the default cluster security group ID that EKS creates by default
 			// EKS attaches this to Managed Nodegroups by default, but we need to handle this for unmanaged nodegroups
-			c.newResource(cfnIngressClusterToNodeSGResource, &ec2.SecurityGroupIngress{
+			c.newResourceV4(cfnIngressClusterToNodeSGResource, &ec2.SecurityGroupIngress{
 				GroupId:               refClusterSharedNodeSG,
 				SourceSecurityGroupId: cfn.GetAtt("ControlPlane", outputs.ClusterDefaultSecurityGroup),
 				Description:           "Allow managed and unmanaged nodes to communicate with each other (all ports)",
@@ -283,7 +234,7 @@ func (c *ClusterResourceSet) addResourcesForSecurityGroups() {
 				FromPort:              sgPortZero,
 				ToPort:                sgMaxNodePort,
 			})
-			c.newResource("IngressNodeToDefaultClusterSG", &ec2.SecurityGroupIngress{
+			c.newResourceV4("IngressNodeToDefaultClusterSG", &ec2.SecurityGroupIngress{
 				GroupId:               cfn.GetAtt("ControlPlane", outputs.ClusterDefaultSecurityGroup),
 				SourceSecurityGroupId: refClusterSharedNodeSG,
 				Description:           "Allow unmanaged nodes to communicate with control plane (all ports)",
@@ -327,10 +278,10 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 
 	allInternalIPv4 := n.clusterSpec.VPC.CIDR.String()
 
-	refControlPlaneSG := makeImportValue(n.clusterStackName, outputs.ClusterSecurityGroup).String()
+	refControlPlaneSG := makeImportValueV4(n.clusterStackName, outputs.ClusterSecurityGroup)
 
 	refNodeGroupLocalSG := n.newResourceV4("SG", &ec2.SecurityGroup{
-		VpcId:            makeImportValue(n.clusterStackName, outputs.ClusterVPC).String(),
+		VpcId:            makeImportValueV4(n.clusterStackName, outputs.ClusterVPC),
 		GroupDescription: "Communication between the control plane and " + desc,
 		Tags: []cfnt.Tag{{
 			Key:   "kubernetes.io/cluster/" + n.clusterSpec.Metadata.Name,
@@ -340,7 +291,7 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 
 	n.securityGroups = append(n.securityGroups, refNodeGroupLocalSG)
 
-	n.newResource("IngressInterCluster", &ec2.SecurityGroupIngress{
+	n.newResourceV4("IngressInterCluster", &ec2.SecurityGroupIngress{
 		GroupId:               refNodeGroupLocalSG,
 		SourceSecurityGroupId: refControlPlaneSG,
 		Description:           "Allow " + desc + " to communicate with control plane (kubelet and workload TCP ports)",
@@ -348,7 +299,7 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 		FromPort:              sgMinNodePort,
 		ToPort:                sgMaxNodePort,
 	})
-	n.newResource("EgressInterCluster", &ec2.SecurityGroupEgress{
+	n.newResourceV4("EgressInterCluster", &ec2.SecurityGroupEgress{
 		GroupId:                    refControlPlaneSG,
 		DestinationSecurityGroupId: refNodeGroupLocalSG,
 		Description:                "Allow control plane to communicate with " + desc + " (kubelet and workload TCP ports)",
@@ -356,7 +307,7 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 		FromPort:                   sgMinNodePort,
 		ToPort:                     sgMaxNodePort,
 	})
-	n.newResource("IngressInterClusterAPI", &ec2.SecurityGroupIngress{
+	n.newResourceV4("IngressInterClusterAPI", &ec2.SecurityGroupIngress{
 		GroupId:               refNodeGroupLocalSG,
 		SourceSecurityGroupId: refControlPlaneSG,
 		Description:           "Allow " + desc + " to communicate with control plane (workloads using HTTPS port, commonly used with extension API servers)",
@@ -364,7 +315,7 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 		FromPort:              sgPortHTTPS,
 		ToPort:                sgPortHTTPS,
 	})
-	n.newResource("EgressInterClusterAPI", &ec2.SecurityGroupEgress{
+	n.newResourceV4("EgressInterClusterAPI", &ec2.SecurityGroupEgress{
 		GroupId:                    refControlPlaneSG,
 		DestinationSecurityGroupId: refNodeGroupLocalSG,
 		Description:                "Allow control plane to communicate with " + desc + " (workloads using HTTPS port, commonly used with extension API servers)",
@@ -372,7 +323,7 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 		FromPort:                   sgPortHTTPS,
 		ToPort:                     sgPortHTTPS,
 	})
-	n.newResource("IngressInterClusterCP", &ec2.SecurityGroupIngress{
+	n.newResourceV4("IngressInterClusterCP", &ec2.SecurityGroupIngress{
 		GroupId:               refControlPlaneSG,
 		SourceSecurityGroupId: refNodeGroupLocalSG,
 		Description:           "Allow control plane to receive API requests from " + desc,
@@ -382,7 +333,7 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 	})
 	if *n.spec.SSH.Allow {
 		if n.spec.PrivateNetworking {
-			n.newResource("SSHIPv4", &ec2.SecurityGroupIngress{
+			n.newResourceV4("SSHIPv4", &ec2.SecurityGroupIngress{
 				GroupId:     refNodeGroupLocalSG,
 				CidrIp:      allInternalIPv4,
 				Description: "Allow SSH access to " + desc + " (private, only inside VPC)",
@@ -391,7 +342,7 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 				ToPort:      sgPortSSH,
 			})
 		} else {
-			n.newResource("SSHIPv4", &ec2.SecurityGroupIngress{
+			n.newResourceV4("SSHIPv4", &ec2.SecurityGroupIngress{
 				GroupId:     refNodeGroupLocalSG,
 				CidrIp:      sgSourceAnywhereIPv4,
 				Description: "Allow SSH access to " + desc,
@@ -399,7 +350,7 @@ func (n *NodeGroupResourceSet) addResourcesForSecurityGroups() {
 				FromPort:    sgPortSSH,
 				ToPort:      sgPortSSH,
 			})
-			n.newResource("SSHIPv6", &ec2.SecurityGroupIngress{
+			n.newResourceV4("SSHIPv6", &ec2.SecurityGroupIngress{
 				GroupId:     refNodeGroupLocalSG,
 				CidrIpv6:    sgSourceAnywhereIPv6,
 				Description: "Allow SSH access to " + desc,
@@ -417,12 +368,12 @@ func (c *ClusterResourceSet) haNAT() {
 		alphanumericUpperAZ := strings.ToUpper(strings.Join(strings.Split(az, "-"), ""))
 
 		// Allocate an EIP
-		c.newResource("NATIP"+alphanumericUpperAZ, &ec2.EIP{
+		c.newResourceV4("NATIP"+alphanumericUpperAZ, &ec2.EIP{
 			Domain: "vpc",
 		})
 		// Allocate a NAT gateway in the public subnet
 		refNG := c.newResourceV4("NATGateway"+alphanumericUpperAZ, &ec2.NatGateway{
-			AllocationId: cfn.GetAtt("NATIP" + alphanumericUpperAZ, "AllocationId"),
+			AllocationId: cfn.GetAtt("NATIP"+alphanumericUpperAZ, "AllocationId"),
 			SubnetId:     cfn.Ref("SubnetPublic" + alphanumericUpperAZ),
 		})
 
@@ -431,13 +382,13 @@ func (c *ClusterResourceSet) haNAT() {
 			VpcId: c.vpc,
 		})
 		// Create a route that sends Internet traffic through the NAT gateway
-		c.newResource("NATPrivateSubnetRoute"+alphanumericUpperAZ, &ec2.Route{
+		c.newResourceV4("NATPrivateSubnetRoute"+alphanumericUpperAZ, &ec2.Route{
 			RouteTableId:         refRT,
 			DestinationCidrBlock: internetCIDR,
 			NatGatewayId:         refNG,
 		})
 		// Associate the routing table with the subnet
-		c.newResource("RouteTableAssociationPrivate"+alphanumericUpperAZ, &ec2.SubnetRouteTableAssociation{
+		c.newResourceV4("RouteTableAssociationPrivate"+alphanumericUpperAZ, &ec2.SubnetRouteTableAssociation{
 			SubnetId:     cfn.Ref("SubnetPrivate" + alphanumericUpperAZ),
 			RouteTableId: refRT,
 		})
@@ -450,7 +401,7 @@ func (c *ClusterResourceSet) singleNAT() {
 	sortedAZs := c.spec.AvailabilityZones
 	firstUpperAZ := strings.ToUpper(strings.Join(strings.Split(sortedAZs[0], "-"), ""))
 
-	c.newResource("NATIP", &ec2.EIP{
+	c.newResourceV4("NATIP", &ec2.EIP{
 		Domain: "vpc",
 	})
 	refNG := c.newResourceV4("NATGateway", &ec2.NatGateway{

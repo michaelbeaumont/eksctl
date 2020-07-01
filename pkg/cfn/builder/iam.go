@@ -39,7 +39,7 @@ var (
 )
 
 func (c *resourceSet) attachAllowPolicy(name string, refRole string, resources interface{}, actions []string) {
-	c.newResource(name, &cfniam.Policy{
+	c.newResourceV4(name, &cfniam.Policy{
 		PolicyName: makeName(name),
 		Roles:      makeSlice(refRole),
 		PolicyDocument: cft.MakePolicyDocument(map[string]interface{}{
@@ -136,7 +136,7 @@ func (n *NodeGroupResourceSet) addResourcesForIAM() error {
 
 	if n.spec.IAM.InstanceRoleARN != "" {
 		// if role is set, but profile isn't - create profile
-		n.newResource(cfnIAMInstanceProfileName, &cfniam.InstanceProfile{
+		n.newResourceV4(cfnIAMInstanceProfileName, &cfniam.InstanceProfile{
 			Path:  "/",
 			Roles: makeSlice(n.spec.IAM.InstanceRoleARN),
 		})
@@ -160,7 +160,7 @@ func (n *NodeGroupResourceSet) addResourcesForIAM() error {
 		return err
 	}
 
-	n.newResource(cfnIAMInstanceProfileName, &cfniam.InstanceProfile{
+	n.newResourceV4(cfnIAMInstanceProfileName, &cfniam.InstanceProfile{
 		Path:  "/",
 		Roles: makeSlice(gfnv4.Ref(cfnIAMInstanceRoleName)),
 	})

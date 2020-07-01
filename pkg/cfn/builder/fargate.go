@@ -1,8 +1,6 @@
 package builder
 
 import (
-	"fmt"
-
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/cfn/outputs"
 	cft "github.com/weaveworks/eksctl/pkg/cfn/template"
@@ -40,8 +38,8 @@ func AddResourcesForFargate(rs *resourceSet, cfg *api.ClusterConfig) error {
 		role.PermissionsBoundary = *cfg.IAM.FargatePodExecutionRolePermissionsBoundary
 	}
 
-	rs.newResource(fargateRoleName, role)
-	rs.defineOutputFromAtt(outputs.FargatePodExecutionRoleARN, fmt.Sprintf("%s.Arn", fargateRoleName), true, func(v string) error {
+	rs.newResourceV4(fargateRoleName, role)
+	rs.defineOutputFromAttV4(outputs.FargatePodExecutionRoleARN, fargateRoleName, "Arn", true, func(v string) error {
 		cfg.IAM.FargatePodExecutionRoleARN = &v
 		return nil
 	})
