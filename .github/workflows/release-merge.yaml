@@ -1,0 +1,39 @@
+name: Merge release changes to master
+
+on:
+  push:
+    branches:
+      - release-*
+
+jobs:
+  release_branch_merge:
+    name: Merge release branch changes to master
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Merge release into master
+        run: |
+          git checkout master
+          git checkout -b merge-${{ github.sha }}
+          # This info comes from https://api.github.com/users/github-actions%5Bbot%5D
+          # This way we make it look like github-actions[bot] made the commits
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-commit --no-ff ${{ github.ref }}
+          git checkout --ours pkg/version/release.go
+          git add pkg/version/release.go
+          EDITOR=true git merge --continue
+          git push --set-upstream origin HEAD
+      - uses: actions/github-script@v2.0.0
+        name: Open PR to master
+        with:
+          script: |
+            await github.pulls.create({
+              ...context.repo,
+              title: `Merge ${context.ref} to master`,
+              head: `merge-${context.sha}`,
+              base: "master",
+            });
+
