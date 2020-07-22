@@ -148,8 +148,12 @@ func requiresVersionUpgrade(clusterMeta *api.ClusterMeta, currentEKSVersion stri
 		return false, nil
 	}
 
+	if clusterMeta.Version == "latest" {
+		clusterMeta.Version = api.LatestVersion
+	}
+
 	if c, err := utils.CompareVersions(clusterMeta.Version, currentEKSVersion); err != nil {
-		return false, err
+		return false, errors.Wrap(err, "couldn't compare versions for upgrade")
 	} else if c < 0 {
 		return false, fmt.Errorf("cannot upgrade to a lower version. Found given target version %q, current cluster version %q", clusterMeta.Version, currentEKSVersion)
 	}
