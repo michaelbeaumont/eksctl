@@ -23,6 +23,9 @@ sudo mv /tmp/eksctl /usr/local/bin
 
 Alternatively, macOS users can use [Homebrew](https://brew.sh):
 
+
+here and there
+
 ```
 brew tap weaveworks/tap
 brew install weaveworks/tap/eksctl
