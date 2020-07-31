@@ -581,6 +581,9 @@
       "x-intellij-html-description": "holds any arbitrary JSON/YAML documents, such as extra config parameters or IAM policies",
       "default": "{}"
     },
+    "LaunchTemplateData": {
+      "type": "object"
+    },
     "ManagedNodeGroup": {
       "required": [
         "name"
@@ -796,6 +799,11 @@
           "type": "object",
           "default": "{}"
         },
+        "launchTemplateData": {
+          "$ref": "#/definitions/LaunchTemplateData",
+          "description": "additional launch template data",
+          "x-intellij-html-description": "additional launch template data"
+        },
         "maxPodsPerNode": {
           "type": "integer"
         },
@@ -905,6 +913,7 @@
         "instancePrefix",
         "instanceName",
         "securityGroups",
+        "launchTemplateData",
         "asgMetricsCollection",
         "ebsOptimized",
         "cpuCredits",

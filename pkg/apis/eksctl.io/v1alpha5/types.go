@@ -14,6 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
+	"github.com/pkg/errors"
+	gfnec2 "github.com/weaveworks/goformation/v4/cloudformation/ec2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -686,6 +688,27 @@ func (c *ClusterConfig) NewNodeGroup() *NodeGroup {
 	return ng
 }
 
+// Schema type is `object`
+type LaunchTemplateData gfnec2.LaunchTemplate_LaunchTemplateData
+
+// DeepCopy is needed to generate kubernetes types for InlineDocument
+func (in *LaunchTemplateData) DeepCopy() *LaunchTemplateData {
+	if in == nil {
+		return nil
+	}
+	unstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(in)
+	if err != nil {
+		panic("couldn't convert CustomLaunchTemplate to unstructured")
+	}
+	copyUnstructured := runtime.DeepCopyJSON(unstructured)
+	out := new(LaunchTemplateData)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(copyUnstructured, out)
+	if err != nil {
+		panic(errors.Wrap(err, "couldn't convert from unstructured to CustomLaunchTemplate"))
+	}
+	return out
+}
+
 // NodeGroup holds configuration attributes that are
 // specific to a nodegroup
 type NodeGroup struct {
@@ -700,6 +723,10 @@ type NodeGroup struct {
 	InstanceName string `json:"instanceName,omitempty"`
 	// +optional
 	SecurityGroups *NodeGroupSGs `json:"securityGroups,omitempty"`
+
+	// LaunchTemplateData is additional launch template data
+	// +optional
+	LaunchTemplateData *LaunchTemplateData `json:"launchTemplateData,omitempty"`
 
 	// +optional
 	ASGMetricsCollection []MetricsCollection `json:"asgMetricsCollection,omitempty"`

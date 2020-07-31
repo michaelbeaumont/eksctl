@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	cfn "github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/imdario/mergo"
+	"github.com/pkg/errors"
 	gfn "github.com/weaveworks/goformation/v4/cloudformation"
 	gfnec2 "github.com/weaveworks/goformation/v4/cloudformation/ec2"
 	gfnt "github.com/weaveworks/goformation/v4/cloudformation/types"
@@ -147,6 +149,13 @@ func (n *NodeGroupResourceSet) addResourcesForNodeGroup() error {
 				Iops:       volumeIOPS,
 			},
 		}}
+	}
+
+	if n.spec.LaunchTemplateData != nil {
+		customData := (*gfnec2.LaunchTemplate_LaunchTemplateData)(n.spec.LaunchTemplateData)
+		if err := mergo.Merge(launchTemplateData, customData); err != nil {
+			return errors.Wrap(err, "unable to merge custom launch template data")
+		}
 	}
 
 	n.newResource("NodeGroupLaunchTemplate", &gfnec2.LaunchTemplate{
