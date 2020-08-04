@@ -139,8 +139,12 @@ func (dg *Generator) newPropertyRef(referenceName string, t ast.Expr, propertyCo
 		panic(errors.Errorf("Unexpected type %v for %s", t, referenceName))
 	}
 
-	// Add a new definition if necessary
-	if refTypeSpec != nil {
+	commentMeta, err := dg.handleComment(referenceName, propertyComment, def)
+
+	if commentMeta.NoDerive {
+		def.Ref = ""
+		// Add a new definition if necessary
+	} else if refTypeSpec != nil {
 		structDef, _ := dg.newPropertyRef(refTypeName, refTypeSpec.Type, refTypeSpec.Doc.Text(), inline)
 		// If we're inlining this, we want the struct definition, not the ref
 		// and we also don't need to save it in our definitions
@@ -150,7 +154,6 @@ func (dg *Generator) newPropertyRef(referenceName string, t ast.Expr, propertyCo
 		dg.Definitions[refTypeName] = structDef
 	}
 
-	commentMeta, err := dg.handleComment(referenceName, propertyComment, def)
 	if err != nil {
 		panic(err)
 	}
