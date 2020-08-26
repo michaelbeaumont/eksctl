@@ -1,0 +1,47 @@
+name: Update max pods file
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 5 * * *'
+
+env:
+  DEFAULT_BRANCH: master
+
+jobs:
+  update_maxpods:
+    name: Update maxpods
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.14'
+      - run: make update-maxpods
+      - name: Commit changes
+        run: |
+          git checkout $DEFAULT_BRANCH
+          git checkout -b merge-maxpods
+          git config user.name "weaveworksbot"
+          git config user.email "weaveworksbot@users.noreply.github.com"
+          git add -u
+          EDITOR=true git commit -m "Update maxpods"
+          ! git diff --exit-code $DEFAULT_BRANCH HEAD
+          git push --set-upstream origin HEAD
+      - uses: actions/github-script@v2.0.0
+        name: Open PR to ${{env.DEFAULT_BRANCH}}
+        with:
+          github-token: ${{ secrets.WEAVEWORKSBOT_TOKEN }}
+          script: |
+            const { data: pr } = await github.pulls.create({
+              ...context.repo,
+              title: `Update maxpods`,
+              head: `merge-maxpods`,
+              base: "${{ env.DEFAULT_BRANCH }}",
+            });
+            await github.issues.addLabels({
+              ...context.repo,
+              issue_number: pr.number,
+              labels: ["kind/improvement"],
+            });
