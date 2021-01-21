@@ -52,7 +52,12 @@ func main() {
 }
 
 func prepareRelease() (string, string) {
-	return version.Version, ""
+	if strings.HasPrefix(version.PreReleaseID, "rc.") {
+		return version.Version, ""
+	}
+	ver := semver.MustParse(version.Version)
+	ver.Patch++
+	return ver.String(), version.PreReleaseID
 }
 
 func prepareReleaseCandidate() (string, string) {
