@@ -48,9 +48,7 @@ var _ = Describe("Delete", func() {
 		}).Once().Return(&awseks.ListFargateProfilesOutput{}, nil)
 
 		fargateStackName := aws.String("eksctl-my-cluster-fargate")
-		p.MockCloudFormation().On("DescribeStacks", &cloudformation.DescribeStacksInput{
-			StackName: fargateStackName,
-		}).Return(&cloudformation.DescribeStacksOutput{
+		describeStacksOutput := cloudformation.DescribeStacksOutput{
 			Stacks: []*cloudformation.Stack{
 				{
 					StackName: fargateStackName,
@@ -63,20 +61,28 @@ var _ = Describe("Delete", func() {
 					StackStatus: aws.String(cloudformation.StackStatusCreateComplete),
 				},
 			},
-		}, nil)
+		}
+		p.MockCloudFormation().On("DescribeStacks", &cloudformation.DescribeStacksInput{
+			StackName: fargateStackName,
+		}).Return(&describeStacksOutput, nil)
 
-		p.MockCloudFormation().On("DeleteStack", mock.Anything).Return(nil, nil)
+		listStacksOutput := cloudformation.ListStacksOutput{
+			StackSummaries: []*cloudformation.StackSummary{
+				{
+					StackName: fargateStackName,
+				},
+			},
+		}
 		p.MockCloudFormation().On("ListStacksPages", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 			Expect(args).To(HaveLen(2))
 			pager := args[1].(func(*cloudformation.ListStacksOutput, bool) bool)
-			pager(&cloudformation.ListStacksOutput{
-				StackSummaries: []*cloudformation.StackSummary{
-					{
-						StackName: fargateStackName,
-					},
-				},
-			}, false)
+			pager(&listStacksOutput, false)
 		}).Return(nil)
+
+		p.MockCloudFormation().On("DeleteStack", mock.Anything).Run(func(args mock.Arguments) {
+			describeStacksOutput.Stacks = []*cloudformation.Stack{}
+			listStacksOutput.StackSummaries = []*cloudformation.StackSummary{}
+		}).Return(nil, nil)
 
 		p.MockEC2().On("DescribeKeyPairs", mock.Anything).Return(&ec2.DescribeKeyPairsOutput{}, nil)
 
