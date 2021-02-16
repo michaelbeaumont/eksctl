@@ -1,11 +1,9 @@
 name: Release candidate
 
 on:
-  workflow_dispatch:
-    inputs:
-      skipIntegrationTests:
-        description: 'Skip check for successful integration tests:'
-        default: 'false'
+  push:
+    branches:
+      - start_it
 
 jobs:
   rc:
@@ -14,41 +12,42 @@ jobs:
     container: weaveworks/eksctl-build:5705efb32cdbf4531b282dba24dae03a872f5b31
     steps:
       - uses: actions/github-script@v3
-        name: Get integration tests status
+        name: Wait for integration tests to pass
         id: it-status
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            // There's no other way to identify the integration test job
-            // GH branch protections are also just a string
-            // must be in sync with integration-tests.yaml
-            const integrationTestsCheckName = "Run integration tests";
-            const { data } = await github.checks.listForRef({
-              ...context.repo,
-              ref: "${{ github.sha }}",
-              check_name: integrationTestsCheckName,
-            });
-            return data.check_runs.some(cr =>
-              cr.status === "completed" && cr.conclusion === "success"
-            );
-      - name: Fail if integration tests not passed
-        if: "!fromJson(steps.it-status.outputs.result) && !fromJson(github.event.inputs.skipIntegrationTests)"
-        run: echo "Integration tests haven't passed yet!" && exit 1
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.WEAVEWORKSBOT_TOKEN }}
-          fetch-depth: 0
-      - name: Cache go-build and mod
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build/
-            ~/go/pkg/mod/
-          key: ${{ hashFiles('go.sum') }}
-      - name: Setup git config as weaveworksbot
-        run: |
-          git config user.name "weaveworksbot"
-          git config user.email "weaveworksbot@users.noreply.github.com"
-      - name: Push release branch, tag RC and update main branch
-        run: make prepare-release-candidate
+            let tries = 0;
+            async function checkStatus() {
+              // There's no other way to identify the integration test job
+              // GH branch protections are also just a string
+              // must be in sync with integration-tests.yaml
+              const integrationTestsCheckName = "Run integration tests";
+              const { data } = await github.checks.listForRef({
+                ...context.repo,
+                ref: "${{ github.sha }}",
+                check_name: integrationTestsCheckName,
+              });
+              return data.check_runs.some(cr =>
+                cr.status === "completed" && cr.conclusion === "success"
+              );
+            }
+            if (!(await checkStatus())) {
+              await github.actions.createWorkflowDispatch({
+                ...context.repo,
+                ref: "${{ github.sha }}",
+                workflow_id: "integration-tests.yaml",
+              });
+            }
+            await new Promise((resolve, reject) => {
+              let go = () => {
+                if (tries > 10) {
+                  reject("Timed out waiting for tests to complete");
+                }
+                tries = tries + 1;
+                checkStatus().then(
+                  success => success ? resolve("Tests completed successfully") : setTimeout(go, 6000)
+                );
+              }
+              go();
+             });
