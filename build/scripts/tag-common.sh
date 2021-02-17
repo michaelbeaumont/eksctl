@@ -23,7 +23,7 @@ function release_generate() {
 }
 
 function check_origin() {
-  if [[ ! "$(git remote get-url origin)" =~ weaveworks/eksctl(\-private)?(\.git)?$ ]] ; then
+  if [[ ! "$(git remote get-url origin)" =~ michaelbeaumont/eksctl(\-private)?(\.git)?$ ]] ; then
     echo "Invalid origin: $(git remote get-url origin)"
     exit 3
   fi
@@ -57,7 +57,7 @@ function commit() {
   echo "Committing version changes"
   local commit_msg=$1
   local release_notes_file=$2
-  git add ./pkg/version/release.go
+  git add pkg/version/release.go
   git add "${release_notes_file}"
   git commit --message "${commit_msg}"
 }
@@ -78,7 +78,9 @@ function bump_version_if_not_at() {
   fi
   echo "Preparing for next development iteration"
   release_generate development
-  git add ./pkg/version/release.go
+  git add pkg/version/release.go
   git commit --message "Prepare for next development iteration"
+  git checkout -b "${default_branch}-$(git rev-parse --short HEAD)"
+  git push origin "$(git branch --show-current)"
   gh pr create --fill --label "skip-release-notes"
 }

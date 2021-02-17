@@ -12,6 +12,7 @@ function create_branch_from_if_doesnt_exist() {
       git checkout "${source_branch}"
       echo "Creating ${wanted_branch} from ${source_branch}"
       git checkout -b "${wanted_branch}"
+      git push origin "${wanted_branch}"
   fi
 }
 
@@ -26,7 +27,9 @@ git checkout "${default_branch}"
 check_current_branch "${default_branch}"
 ensure_up_to_date "${default_branch}"
 
-create_branch_from_if_doesnt_exist "${release_branch}" "${default_branch}"
+git checkout -
+
+create_branch_from_if_doesnt_exist "${release_branch}" "$(git branch --show-current)"
 
 git checkout "${release_branch}"
 check_current_branch "${release_branch}"
@@ -34,14 +37,16 @@ ensure_up_to_date "${release_branch}" || echo "${release_branch} not found in or
 
 # Update eksctl version to release-candidate
 rc_version=$(release_generate release-candidate)
-m="Tag ${rc_version} release candidate"
+m="Tag ${rc_version} release candidate /trigger-release"
 
 commit "${m}" "${release_notes_file}"
 
 tag_version_and_latest "${m}" "${rc_version}"
 
-git push origin "${release_branch}:${release_branch}"
-git push origin "${rc_version}"
+# Make PR to release branch
+git checkout -b "${release_branch}-$(git rev-parse --short HEAD)"
+git push origin "$(git branch --show-current)"
+gh pr create --base "${release_branch}" --title "Release ${rc_version}" --body "/trigger-release" --label "skip-release-notes" --label "/trigger-release"
 
 # Make PR to update default branch if necessary
 git checkout "${default_branch}"
