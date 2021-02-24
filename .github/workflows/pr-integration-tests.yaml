@@ -1,0 +1,21 @@
+name: PR integration tests
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  it:
+    name: Run integration tests on comment
+    if: |
+      github.event.issue.pull_request != '' && contains(github.event.comment.body, '/integration-tests')
+      && github.event.comment.author_association == 'MEMBER'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start integration tests
+        run: |
+          return github.actions.createWorkflowDispatch({
+            ...context.repo,
+            ref: "${{ github.ref }}",
+            workflow_id: "integration-tests.yaml",
+          })
