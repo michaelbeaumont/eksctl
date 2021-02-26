@@ -24,6 +24,6 @@ jobs:
       - name: Setup identity as weaveworksbot
         uses: ./.github/actions/setup-identity
         with:
-          token: "${{ secrets.WEAVEWORKSBOT_TOKEN }}"
+          token: "${{ secrets.GITHUB_TOKEN }}"
       - name: Tag release and update main branch
         run: make prepare-release
