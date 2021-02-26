@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.WEAVEWORKSBOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       - name: Cache go-build and mod
         uses: actions/cache@v2
