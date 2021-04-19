@@ -21,7 +21,7 @@ require (
 	github.com/gofrs/flock v0.8.0
 	github.com/golangci/golangci-lint v1.37.1
 	github.com/gomarkdown/markdown v0.0.0-20201113031856-722100d81a8e // indirect
-	github.com/goreleaser/goreleaser v0.154.0
+	github.com/goreleaser/goreleaser v0.162.1
 	github.com/instrumenta/kubeval v0.0.0-20190918223246-8d013ec9fc56
 	github.com/justinbarrick/go-k8s-portforward v1.0.4-0.20200904152830-b575325c1855
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
@@ -50,7 +50,6 @@ require (
 	github.com/weaveworks/logger v0.0.0-20210210175120-de9359622dfc
 	github.com/whilp/git-urls v0.0.0-20191001220047-6db9661140c0
 	golang.org/x/mod v0.4.1 // indirect
-	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 	golang.org/x/tools v0.1.0
 	k8s.io/api v0.19.5
 	k8s.io/apiextensions-apiserver v0.19.5
